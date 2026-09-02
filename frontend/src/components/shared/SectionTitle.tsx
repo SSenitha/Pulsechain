@@ -12,12 +12,12 @@ export function SectionTitle({
     action,
 }: SectionTitleProps) {
     return (
-        <div className="mb-5 flex items-end justify-between gap-3">
+        <div className="mb-6 flex items-end justify-between gap-3">
             <div>
-                <div className="font-mono text-[10px] tracking-[.2em] text-cyan-400/75">
+                <div className="text-[11px] font-medium tracking-widest text-cyan-400/70 uppercase">
                     {eyebrow}
                 </div>
-                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-100">
+                <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-100 leading-tight">
                     {title}
                 </h1>
             </div>
