@@ -73,7 +73,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
       data-testid="modal-truck-detail"
     >
       <div
-        className="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden border border-slate-700/80 bg-[#0b1a22] shadow-2xl"
+        className="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-700/60 bg-[#0b1a22] shadow-2xl"
         style={{ animation: "slideUp .18s ease-out" }}
       >
         {/* Modal Header */}
@@ -102,7 +102,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
             </div>
             <button
               onClick={onClose}
-              className="grid h-7 w-7 place-items-center border border-slate-700 text-slate-500 transition-colors hover:border-slate-500 hover:text-slate-200"
+              className="grid h-8 w-8 place-items-center rounded-full border border-slate-700 text-slate-500 transition-all hover:border-slate-500 hover:bg-slate-700/60 hover:text-slate-200"
               data-testid="button-close-modal"
             >
               <X size={14} />
@@ -115,7 +115,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
 
           {/* Metric bar */}
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className={`border p-4 ${isCritical ? "border-rose-400/40 bg-rose-400/[.07]" : "border-slate-700/60 bg-slate-800/30"}`}>
+            <div className={`rounded-xl border p-4 ${isCritical ? "border-rose-400/40 bg-rose-400/[.07]" : "border-slate-700/60 bg-slate-800/30"}`}>
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 uppercase tracking-wide">
                 <ThermometerSun size={12} /> Temperature
               </div>
@@ -127,7 +127,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
               </div>
             </div>
 
-            <div className="border border-slate-700/60 bg-slate-800/30 p-4">
+            <div className="rounded-xl border border-slate-700/60 bg-slate-800/30 p-4">
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 uppercase tracking-wide">
                 <Droplets size={12} /> Humidity
               </div>
@@ -137,7 +137,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
               <div className="mt-1 text-xs text-slate-500">Max {RH_MAX}% RH</div>
             </div>
 
-            <div className="border border-slate-700/60 bg-slate-800/30 p-4">
+            <div className="rounded-xl border border-slate-700/60 bg-slate-800/30 p-4">
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 uppercase tracking-wide">
                 <Zap size={12} /> Ambient Light
               </div>
@@ -145,7 +145,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
               <div className="mt-1 text-xs text-slate-500">Lux reading</div>
             </div>
 
-            <div className={`border p-4 ${truck.risk > 70 ? "border-rose-400/40 bg-rose-400/[.07]" : truck.risk > 40 ? "border-amber-400/40 bg-amber-400/[.07]" : "border-slate-700/60 bg-slate-800/30"}`}>
+            <div className={`rounded-xl border p-4 ${truck.risk > 70 ? "border-rose-400/40 bg-rose-400/[.07]" : truck.risk > 40 ? "border-amber-400/40 bg-amber-400/[.07]" : "border-slate-700/60 bg-slate-800/30"}`}>
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 uppercase tracking-wide">
                 <Shield size={12} /> Risk Score
               </div>
@@ -182,7 +182,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
           </div>
 
           {/* Telemetry Chart */}
-          <div className="border border-slate-700/60 bg-[#071218] p-4">
+          <div className="border border-slate-700/60 bg-[#071218] rounded-xl p-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Telemetry · 9 hr window</div>
@@ -277,7 +277,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
           </div>
 
           {/* Handshake log */}
-          <div className="mt-4 border border-slate-700/60 bg-[#071218] p-4">
+          <div className="mt-4 rounded-xl border border-slate-700/60 bg-[#071218] p-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Handshake Log</div>
@@ -413,18 +413,18 @@ export function Fleet() {
         </div>
 
         {/* Cards — expanded to fill width */}
-        <div className="grid gap-px bg-slate-800/70 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((item) => (
             <button
               onClick={() => setModalTruck(item)}
               key={item.id}
               className={`
-                group panel-hover p-4 text-left transition-all duration-150
+                group panel-hover rounded-2xl border p-4 text-left transition-all duration-150
                 ${item.health === "critical"
-                  ? "bg-rose-400/10 border-rose-400/50 hover:bg-rose-400/[.15]"
+                  ? "bg-rose-400/10 border-rose-400/40 hover:bg-rose-400/[.15] hover:shadow-[0_4px_20px_rgba(248,113,113,0.12)]"
                   : item.health === "amber"
-                  ? "bg-amber-400/10 border-orange-400/50 hover:bg-amber-400/[.15]"
-                  : "bg-[#0b1a22] border-slate-800/50 hover:bg-slate-700/20"
+                  ? "bg-amber-400/10 border-amber-400/40 hover:bg-amber-400/[.15] hover:shadow-[0_4px_20px_rgba(251,191,36,0.1)]"
+                  : "bg-[#0b1a22] border-slate-700/60 hover:bg-slate-700/20 hover:border-slate-600"
                 }
               `}
               data-testid={`card-truck-${item.id}`}

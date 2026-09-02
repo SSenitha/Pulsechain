@@ -25,7 +25,7 @@ type StatusBadgeProps = {
 export function StatusBadge({ health }: StatusBadgeProps) {
     return (
         <span
-            className={`inline-flex items-center gap-1.5 border px-2.5 py-1 font-medium text-[11px] tracking-wide ${tone(health)}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-medium text-[11px] tracking-wide ${tone(health)}`}
             data-testid={`status-badge-${health}`}
         >
             <span className="status-dot bg-current" />

@@ -22,7 +22,7 @@ export function KpiCard({
 
     return (
         <div
-            className="panel p-4"
+            className="panel p-5 transition-shadow hover:shadow-[0_4px_24px_rgba(0,0,0,0.35)]"
             data-testid={`kpi-${name.toLowerCase().replaceAll(' ', '-')}`}
         >
             <div className="text-[11px] font-medium tracking-wide text-slate-500 uppercase">

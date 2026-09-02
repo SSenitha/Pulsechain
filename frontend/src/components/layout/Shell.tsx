@@ -34,7 +34,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
             {/* aside tag --> for content that doesn't affect main context. eg: sidebar */}
             <aside
-                className={`fixed inset-y-0 left-0 z-30 flex w-[248px] flex-col border-r border-slate-800 bg-[#061017] 
+            className={`fixed inset-y-0 left-0 z-30 flex w-[248px] flex-col border-r border-slate-800 bg-[#061017] rounded-r-2xl
                     transition-transform md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 {/* Pulsechain Logo - refer to logo.tsx to find the logo banner */}
@@ -53,9 +53,9 @@ export function Shell({ children }: { children: ReactNode }) {
                             key={href}
                             href={href}
                             onClick={() => setOpen(false)}
-                            className={`group mb-1 flex h-10 items-center gap-3 border px-3 text-xs transition-colors 
-                                ${location === href ? 'border-cyan-400/45 bg-cyan-300/10 text-cyan-200' :
-                                    'border-transparent text-slate-500 hover:border-slate-700 hover:bg-slate-900 hover:text-slate-200'}`}
+                            className={`group mb-1 flex h-10 items-center gap-3 rounded-xl border px-3 text-xs transition-all duration-150
+                                ${location === href ? 'border-cyan-400/30 bg-cyan-300/10 text-cyan-200 shadow-[0_0_12px_rgba(103,232,249,0.08)]' :
+                                    'border-transparent text-slate-500 hover:border-slate-700/80 hover:bg-slate-800/60 hover:text-slate-200'}`}
                             data-testid={`link-nav-${href.slice(1)}`}
                         >
                             <Icon
@@ -69,7 +69,7 @@ export function Shell({ children }: { children: ReactNode }) {
                             <span>{itemLabel}</span>
 
                             {location === href && (
-                                <span className="ml-auto h-1.5 w-1.5 bg-orange-400" />
+                                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400" />
                             )}
                         </Link>
                     ))}
@@ -98,8 +98,8 @@ export function Shell({ children }: { children: ReactNode }) {
 
             {/* Top Ribbon  --> For status content */}
             <main className="min-h-[100dvh] md:pl-[248px]">
-                <header className="sticky top-0 z-10 flex h-[76px] items-center justify-between border-b 
-                border-slate-800 bg-[#071219]/95 px-4 backdrop-blur md:px-7">
+                <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between border-b
+                border-slate-800/80 bg-[#071219]/90 px-4 backdrop-blur-md md:px-7 shadow-[0_1px_0_rgba(255,255,255,0.03)]">
 
                     <div className="flex items-center gap-3">
                         {/* Hamburger button for MOBILE navigation --> Hidden for PC*/}
@@ -121,11 +121,11 @@ export function Shell({ children }: { children: ReactNode }) {
                     <div className="flex items-center gap-2 sm:gap-4">
                         {/* Notification button --> Should make dynamic (later) */}
                         <button
-                            className="relative border border-transparent p-2 text-slate-500 hover:border-slate-700 hover:text-slate-200"
+                            className="relative rounded-xl border border-transparent p-2 text-slate-500 transition-all hover:border-slate-700/80 hover:bg-slate-800/60 hover:text-slate-200"
                             data-testid="button-notifications"
                         >
                             <Bell size={16} />
-                            <span className="absolute right-1 top-1 h-1.5 w-1.5 bg-orange-400" />
+                            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
                         </button>
 
                         {/* User Profile button --> Should make dynamic (later) */}
@@ -140,10 +140,10 @@ export function Shell({ children }: { children: ReactNode }) {
                                                 : 'Operator',
                                     )
                                 }
-                                className="flex items-center gap-2 border border-slate-700 bg-slate-900/50 px-2 py-1.5 text-left hover:border-cyan-400/50"
+                                className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/50 px-2.5 py-1.5 text-left transition-all hover:border-cyan-400/40 hover:bg-slate-700/60"
                                 data-testid="button-role-switcher"
                             >
-                                <span className="grid h-6 w-6 place-items-center bg-orange-400/15 font-mono text-[10px] text-orange-300">
+                                <span className="grid h-6 w-6 place-items-center rounded-full bg-orange-400/15 font-mono text-[10px] text-orange-300">
                                     MO
                                 </span>
                                 <span className="hidden sm:block">
