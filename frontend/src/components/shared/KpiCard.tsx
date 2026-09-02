@@ -25,11 +25,11 @@ export function KpiCard({
             className="panel p-4"
             data-testid={`kpi-${name.toLowerCase().replaceAll(' ', '-')}`}
         >
-            <div className="font-mono text-[9px] tracking-[.15em] text-slate-600">
+            <div className="text-[11px] font-medium tracking-wide text-slate-500 uppercase">
                 {name}
             </div>
-            <div className={`mt-2 text-2xl font-semibold ${color}`}>{value}</div>
-            <div className="mt-1 text-[10px] text-slate-500">{note}</div>
+            <div className={`mt-2 text-3xl font-semibold tracking-tight ${color}`}>{value}</div>
+            <div className="mt-1 text-xs text-slate-400">{note}</div>
         </div>
     );
 }

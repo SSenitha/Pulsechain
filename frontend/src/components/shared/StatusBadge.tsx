@@ -11,12 +11,12 @@ export const tone = (health: Health) =>
 
 export const label = (health: Health) =>
     health === 'critical'
-        ? 'CRITICAL'
+        ? 'Critical'
         : health === 'amber'
-            ? 'PREDICTED WARNING'
+            ? 'Warning'
             : health === 'offline'
-                ? 'OFFLINE'
-                : 'NOMINAL';
+                ? 'Offline'
+                : 'Nominal';
 
 type StatusBadgeProps = {
     health: Health;
@@ -25,7 +25,7 @@ type StatusBadgeProps = {
 export function StatusBadge({ health }: StatusBadgeProps) {
     return (
         <span
-            className={`inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[9px] tracking-[.08em] ${tone(health)}`}
+            className={`inline-flex items-center gap-1.5 border px-2.5 py-1 font-medium text-[11px] tracking-wide ${tone(health)}`}
             data-testid={`status-badge-${health}`}
         >
             <span className="status-dot bg-current" />
