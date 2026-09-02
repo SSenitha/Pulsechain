@@ -32,13 +32,28 @@ def build_truck_schema(t: DBTruck, db: Session) -> TruckSchema:
         return TruckSchema(
             id=t.id, driver=t.driver, route=t.route, destination=t.destination,
             health="offline", temp=0.0, humidity=0.0, lux=0.0, door="UNKNOWN",
-            risk=0, eta="--:--", ssid=t.ssid, lastSeen="never"
+            risk=0, eta="--:--", ssid=t.ssid, lastSeen="never",
+            tempMin=2.0, tempMax=8.0
         )
 
     sec_ago = (datetime.utcnow() - latest.time).total_seconds()
     last_seen = f"{int(sec_ago)}s ago" if sec_ago < 60 else f"{int(sec_ago//60)}m ago"
 
-    health, risk = evaluate_status(latest.temp, 2.0, 8.0, latest.tamper)
+    # Derive strictest temp limits from actively assigned packages
+    active_assignments = (
+        db.query(DBAssignment)
+        .filter(DBAssignment.truck_id == t.id, DBAssignment.unassigned_at == None)
+        .all()
+    )
+    if active_assignments:
+        packages = [a.package for a in active_assignments if a.package is not None]
+        effective_temp_min = min((p.temp_min for p in packages), default=2.0)
+        effective_temp_max = min((p.temp_max for p in packages), default=8.0)
+    else:
+        effective_temp_min = 2.0
+        effective_temp_max = 8.0
+
+    health, risk = evaluate_status(latest.temp, effective_temp_min, effective_temp_max, latest.tamper)
     if sec_ago > 300:
         health = "offline"
 
@@ -47,7 +62,8 @@ def build_truck_schema(t: DBTruck, db: Session) -> TruckSchema:
         health=health, temp=latest.temp, humidity=latest.humidity,
         lux=40.0 if latest.tamper else 6.0,
         door="OPEN" if latest.tamper else "SEALED",
-        risk=risk, eta="03:45", ssid=t.ssid, lastSeen=last_seen
+        risk=risk, eta="03:45", ssid=t.ssid, lastSeen=last_seen,
+        tempMin=effective_temp_min, tempMax=effective_temp_max
     )
 
 def build_package_schema(p: DBPackage, db: Session) -> PackageSchema:
