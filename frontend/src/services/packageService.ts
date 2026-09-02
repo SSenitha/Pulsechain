@@ -20,4 +20,7 @@ export const packageService = {
       body: JSON.stringify(data),
     });
   },
+
+  // /packages/{package_id}/assign
+  // /packages/{package_id}/delivered
 };
