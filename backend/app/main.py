@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -87,26 +88,47 @@ def get_truck_telemetry(truck_id: str, limit: int = 50, db: Session = Depends(ge
     ]
     return TruckTelemetryResponse(truckId=truck.id, current=current, history=history)
 
-@app.post("/api/v1/fleet/register", response_model=TruckSchema, tags=["Fleet"])
-def register_truck(data: TruckRegisterRequest, db: Session = Depends(get_db)):
-    if db.query(DBTruck).filter(DBTruck.id == data.truck_id).first():
-        raise HTTPException(status_code=400, detail="Truck ID already registered")
+# @app.post("/api/v1/fleet/register", response_model=TruckSchema, tags=["Fleet"])
+# def register_truck(data: TruckRegisterRequest, db: Session = Depends(get_db)):
+#     if db.query(DBTruck).filter(DBTruck.id == data.truck_id).first():
+#         raise HTTPException(status_code=400, detail="Truck ID already registered")
 
+#     new_truck = DBTruck(
+#         id=data.truck_id,
+#         driver=data.driver,
+#         ssid=data.base_ssid,
+#         route="Pending Route",
+#         destination="Pending Destination"
+#     )
+#     db.add(new_truck)
+#     db.commit()
+#     db.refresh(new_truck)
+#     return TruckSchema(
+#         id=new_truck.id, driver=new_truck.driver, route=new_truck.route, destination=new_truck.destination,
+#         health="offline", temp=0.0, humidity=0.0, lux=0.0, door="UNKNOWN",
+#         risk=0, eta="--:--:--", ssid=new_truck.ssid, lastSeen="never"
+#     )
+
+class TruckRegisterRequest(BaseModel):
+    truck_id: str
+    driver: str
+    base_ssid: str
+    route: str = "Unassigned Route"
+    destination: str = "Unassigned Hub"
+
+@app.post("/api/v1/fleet/register", response_model=TruckSchema)
+def register_truck(data: TruckRegisterRequest, db: Session = Depends(get_db)):
     new_truck = DBTruck(
         id=data.truck_id,
-        driver=data.driver,
-        ssid=data.base_ssid,
-        route="Pending Route",
-        destination="Pending Destination"
+        driver=data.driver or "Unassigned",
+        ssid=data.base_ssid or "PCG-BASE-NODE",
+        route=data.route,
+        destination=data.destination
     )
     db.add(new_truck)
     db.commit()
     db.refresh(new_truck)
-    return TruckSchema(
-        id=new_truck.id, driver=new_truck.driver, route=new_truck.route, destination=new_truck.destination,
-        health="offline", temp=0.0, humidity=0.0, lux=0.0, door="UNKNOWN",
-        risk=0, eta="--:--:--", ssid=new_truck.ssid, lastSeen="never"
-    )
+    return build_truck_schema(new_truck, db)
 
 # ----------------- PACKAGES -----------------
 @app.get("/api/v1/packages", response_model=List[PackageSchema], tags=["Packages"])
