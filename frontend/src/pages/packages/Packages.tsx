@@ -6,10 +6,22 @@ import { KpiCard } from "@/components/shared/KpiCard";
 import { SearchBox } from "@/components/shared/SearchBox";
 import { SectionTitle } from "@/components/shared/SectionTitle";
 import { StatusBadge, tone } from "@/components/shared/StatusBadge";
-import { useApp } from "@/context/AppContext";
+//import { useApp } from "@/context/AppContext";
+
+// Database Connection
+import { useQuery } from '@tanstack/react-query';
+import { packageService } from '@/services/packageService';
 
 export function Packages() {
-  const { packages } = useApp();
+  //const { packages } = useApp();
+
+  // Database Connection
+  const { data: packages = [] } = useQuery({
+    queryKey: ['packages'],
+    queryFn: () => packageService.getPackages()
+  });
+  //---
+
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState("PKG-BIO-302");
   const [filter, setFilter] = useState<"all" | "critical" | "amber">("all");

@@ -1,95 +1,126 @@
 import { useState } from "react";
-import { Check, Send, Shield, Wifi, LockKeyhole } from "lucide-react";
+import { Check, Send, Shield, Wifi, LockKeyhole, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { SectionTitle } from "@/components/shared/SectionTitle";
 import { useApp } from "@/context/AppContext";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { packageService } from "@/services/packageService";
 
 export function Operations() {
-  const { trucks, packages, addConsignment, assignConsignment } = useApp();
+  const { trucks, packages } = useApp();
+  const queryClient = useQueryClient();
+
   const [packageDone, setPackageDone] = useState(false);
   const [dispatchDone, setDispatchDone] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  // Form state for creating a new package
+  // Form states
   const [packageForm, setPackageForm] = useState({
     product: "",
     origin: "",
     destination: "",
-    min: "0",
-    max: "0",
+    min: "2.0",
+    max: "8.0",
   });
 
-  // Form state for dispatching a package
   const [assignmentForm, setAssignmentForm] = useState({
     packageId: "",
     truck: "",
   });
 
-  // Updating form states
   const updatePackageForm = (key: string, value: string) =>
     setPackageForm((old) => ({ ...old, [key]: value }));
 
   const updateAssignmentForm = (key: string, value: string) =>
     setAssignmentForm((old) => ({ ...old, [key]: value }));
 
+  // --- 1. Create Package Mutation ---
+  const createPackageMutation = useMutation({
+    mutationFn: (payload: {
+      product: string;
+      origin: string;
+      destination: string;
+      tempMin: number;
+      tempMax: number;
+    }) => packageService.createPackage(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      setPackageDone(true);
+      setFormError(null);
+      setPackageForm({
+        product: "",
+        origin: "",
+        destination: "",
+        min: "2.0",
+        max: "8.0",
+      });
+      setTimeout(() => setPackageDone(false), 4000);
+    },
+    onError: (err: Error) => {
+      setFormError(err.message || "Failed to create consignment");
+    },
+  });
 
-  // Create a new package and add it to the list
-  const createPackage = (e: React.SubmitEvent<HTMLFormElement>) => {
+  // --- 2. Assign Package Mutation ---
+  const assignPackageMutation = useMutation({
+    mutationFn: ({ packageId, truckId, carrier }: { packageId: string; truckId: string; carrier: string }) =>
+      packageService.assignPackage(packageId, { truck: truckId, carrier }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      queryClient.invalidateQueries({ queryKey: ["fleet"] });
+      setDispatchDone(true);
+      setFormError(null);
+      setAssignmentForm({ packageId: "", truck: "" });
+      setTimeout(() => setDispatchDone(false), 4000);
+    },
+    onError: (err: Error) => {
+      setFormError(err.message || "Failed to dispatch consignment");
+    },
+  });
+
+  // Handlers
+  const handleCreatePackage = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const tempMin = parseFloat(packageForm.min);
+    const tempMax = parseFloat(packageForm.max);
 
-    const id = `PKG-NEW-${Math.floor(100 + Math.random() * 800)}`;
-    const nextPackage = {
-      id,
-      product: packageForm.product || "Temperature Controlled Consignment",
-      lot: "PENDING",
-      origin: packageForm.origin || "Northstar Origin",
-      destination: packageForm.destination || "Regional DC",
-      carrier: "Assigned operator",
-      tempMin: Number(packageForm.min),
-      tempMax: Number(packageForm.max),
-      actual: Number(packageForm.min) + 0.4,
-      health: "nominal" as const,
-      risk: 8,
-      truck: "UNASSIGNED",
-      eta: "04:00:00",
-      tamper: false,
-      updated: "just now",
-    };
+    if (tempMin >= tempMax) {
+      setFormError("Minimum temperature must be lower than maximum temperature.");
+      return;
+    }
 
-    addConsignment(nextPackage);
-    setPackageDone(true);
-    setDispatchDone(false);
+    createPackageMutation.mutate({
+      product: packageForm.product.trim() || "Cold Chain Consignment",
+      origin: packageForm.origin.trim(),
+      destination: packageForm.destination.trim(),
+      tempMin,
+      tempMax,
+    });
   };
 
-  // Dispatch a package by assigning it to a truck
-  const dispatchPackage = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleDispatchPackage = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const packageId = assignmentForm.packageId.trim();
-    if (!packageId) { return; }
+    if (!packageId || !assignmentForm.truck) return;
 
-    const selectedPackage = packages.find(
-      (item) => item.id.toLowerCase() === packageId.toLowerCase(),
-    );
+    const selectedTruck = trucks.find((t) => t.id === assignmentForm.truck);
+    const carrier = selectedTruck?.driver || "Assigned Driver";
 
-    if (!selectedPackage) { return; }
-    if (!assignmentForm.truck) { return; }
-
-    assignConsignment(selectedPackage.id, assignmentForm.truck, "Assigned operator");
-    setDispatchDone(true);
+    assignPackageMutation.mutate({
+      packageId,
+      truckId: assignmentForm.truck,
+      carrier,
+    });
   };
 
-  // Find the package that matches the ID in the assignment form
-  const matchingPackage = assignmentForm.packageId.trim() === ""
-    ? null
-    : packages.find(
-      (item) => item.id.toLowerCase() === assignmentForm.packageId.trim().toLowerCase(),
-    );
+  // Live lookup matching package
+  const matchingPackage =
+    assignmentForm.packageId.trim() === ""
+      ? null
+      : packages.find(
+        (item) => item.id.toLowerCase() === assignmentForm.packageId.trim().toLowerCase()
+      );
 
-
-
-
-  //----------------------------------------------------------------------------
-  // Render the Operations page with forms for creating and dispatching packages
-  //----------------------------------------------------------------------------
   return (
     <>
       <SectionTitle
@@ -97,12 +128,17 @@ export function Operations() {
         title="Operations"
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,.9fr)]">
+      {formError && (
+        <div className="mb-4 flex items-center gap-2 border border-rose-500/40 bg-rose-950/20 p-3 font-mono text-xs text-rose-400">
+          <AlertCircle size={14} />
+          <span>{formError}</span>
+        </div>
+      )}
 
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,.9fr)]">
         {/* Package Registration - LHS */}
         <div className="space-y-5">
-          {/* Create Package Form */}
-          <form onSubmit={createPackage} className="panel p-5">
+          <form onSubmit={handleCreatePackage} className="panel p-5">
             <div className="mb-6 border-b border-slate-800 pb-4">
               <div className="font-mono text-[10px] tracking-[.16em] text-cyan-400">
                 01 / CONSIGNMENT PROFILE
@@ -112,7 +148,6 @@ export function Operations() {
               </p>
             </div>
 
-            {/* Form Content */}
             <div className="grid gap-4 sm:grid-cols-2">
               {[
                 ["origin", "ORIGIN FACILITY*", "e.g. CPC Warehouse"],
@@ -129,41 +164,51 @@ export function Operations() {
                     value={packageForm[key as keyof typeof packageForm]}
                     onChange={(e) => updatePackageForm(key, e.target.value)}
                     placeholder={placeholder}
-                    className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 text-xs text-slate-200 outline-none 
-                    placeholder:text-slate-700 focus:border-cyan-400"
+                    className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 text-xs text-slate-200 outline-none placeholder:text-slate-700 focus:border-cyan-400"
                   />
                 </label>
               ))}
 
-              {/* Temperature Thresholds: seperate cause flexbox is different */}
               <div>
                 <span className="mb-2 block font-mono text-[9px] text-slate-500">
-                  ALLOWED TEMP MIN / MAX °C
+                  ALLOWED TEMP MIN / MAX °C*
                 </span>
                 <div className="flex gap-2">
                   <input
+                    required
                     data-testid="input-threshold-min"
                     type="number"
+                    step="0.1"
                     value={packageForm.min}
                     onChange={(e) => updatePackageForm("min", e.target.value)}
                     className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 font-mono text-xs text-cyan-200 outline-none focus:border-cyan-400"
                   />
                   <input
+                    required
                     data-testid="input-threshold-max"
                     type="number"
+                    step="0.1"
                     value={packageForm.max}
                     onChange={(e) => updatePackageForm("max", e.target.value)}
                     className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 font-mono text-xs text-cyan-200 outline-none focus:border-cyan-400"
                   />
                 </div>
               </div>
-
             </div>
 
-            {/* Submit package form content */}
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button type="submit" variant="primary" testId="button-create-consignment">
-                <Send size={14} /> Create & queue
+              <Button
+                type="submit"
+                variant="primary"
+                testId="button-create-consignment"
+                disabled={createPackageMutation.isPending}
+              >
+                {createPackageMutation.isPending ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Send size={14} />
+                )}
+                {createPackageMutation.isPending ? "Queuing..." : "Create & queue"}
               </Button>
               <Button
                 type="button"
@@ -172,8 +217,8 @@ export function Operations() {
                     product: "",
                     origin: "",
                     destination: "",
-                    min: "0",
-                    max: "0",
+                    min: "2.0",
+                    max: "8.0",
                   })
                 }
                 testId="button-reset-consignment"
@@ -182,7 +227,6 @@ export function Operations() {
               </Button>
             </div>
 
-            {/* Reserve space for the success banner so layout stays stable */}
             <div className="mt-4 min-h-[46px]">
               {packageDone ? (
                 <div
@@ -196,15 +240,11 @@ export function Operations() {
               )}
             </div>
           </form>
-
         </div>
-
 
         {/* Package Dispatch - RHS */}
         <section>
-
-          {/* Dispatch Form */}
-          <form onSubmit={dispatchPackage} className="panel p-5 pb-1">
+          <form onSubmit={handleDispatchPackage} className="panel p-5 pb-1">
             <div className="mb-6 border-b border-slate-800 pb-4">
               <div className="font-mono text-[10px] tracking-[.16em] text-cyan-400">
                 02 / ASSIGNMENT
@@ -214,7 +254,6 @@ export function Operations() {
               </p>
             </div>
 
-            {/* Dispatch form content */}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-2 block font-mono text-[9px] text-slate-500">
@@ -222,12 +261,11 @@ export function Operations() {
                 </span>
                 <input
                   required
-                  data-testid="input-consignment-driver"
+                  data-testid="input-consignment-packageId"
                   value={assignmentForm.packageId}
                   onChange={(e) => updateAssignmentForm("packageId", e.target.value)}
-                  placeholder="eg: PKG-XXX-123"
-                  className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 text-xs text-slate-200 outline-none
-                placeholder:text-slate-700 focus:border-cyan-400"
+                  placeholder="e.g. PKG-VAX-881"
+                  className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 text-xs text-slate-200 outline-none placeholder:text-slate-700 focus:border-cyan-400"
                 />
               </label>
 
@@ -254,14 +292,22 @@ export function Operations() {
               </label>
             </div>
 
-            {/* Submit dispatch form content */}
             <div className="mt-9.5 flex flex-wrap gap-3 h-10">
-              <Button type="submit" variant="primary" testId="button-dispatch-consignment">
-                <Send size={14} /> Dispatch
+              <Button
+                type="submit"
+                variant="primary"
+                testId="button-dispatch-consignment"
+                disabled={assignPackageMutation.isPending}
+              >
+                {assignPackageMutation.isPending ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Send size={14} />
+                )}
+                {assignPackageMutation.isPending ? "Dispatching..." : "Dispatch"}
               </Button>
             </div>
 
-            {/* Reserve space for the success banner so layout stays stable */}
             <div className="mt-6 min-h-[46px]">
               {dispatchDone ? (
                 <div
@@ -276,58 +322,53 @@ export function Operations() {
             </div>
           </form>
 
-          {/* Detail panes */}
+          {/* Quick Details Inspection Cards */}
           <div className="panel p-5 grid gap-4 sm:grid-cols-2">
-
-            {/* Package details form id */}
-            <div className="p-3 h-32 overflow-y-auto rounded border border-slate-700 bg-slate-900/40 items-center gap-2 flex">
+            <div className="p-3 h-32 overflow-y-auto rounded border border-slate-700 bg-slate-900/40 items-center flex">
               {assignmentForm.packageId.trim() === "" ? (
-                <div className="text-xs text-slate-700">
-                  Enter a package ID to view details
+                <div className="text-xs text-slate-500">
+                  Enter a package ID to inspect details
                 </div>
-
               ) : matchingPackage ? (
                 <div className="font-mono text-xs text-slate-400 space-y-0.5">
-                  <div className="text-sm">{matchingPackage.id}</div>
-                  <div className="pb-1.5">{matchingPackage.product}</div>
+                  <div className="text-sm font-semibold text-slate-200">{matchingPackage.id}</div>
+                  <div className="pb-1 text-cyan-300">{matchingPackage.product}</div>
                   <div>FROM: {matchingPackage.origin}</div>
-                  <div>TO .: {matchingPackage.destination}</div>
+                  <div>TO: {matchingPackage.destination}</div>
                   <div>TEMP: {matchingPackage.tempMin}°C – {matchingPackage.tempMax}°C</div>
                 </div>
-
               ) : (
-                <div className="text-xs text-amber-300">
+                <div className="text-xs text-amber-400">
                   No package found for "{assignmentForm.packageId}"
                 </div>
               )}
             </div>
 
-            {/* Truck details form id */}
-            <div className="p-3 h-32 overflow-y-auto rounded border border-slate-700 bg-slate-900/40 items-center gap-2 flex">
+            <div className="p-3 h-32 overflow-y-auto rounded border border-slate-700 bg-slate-900/40 items-center flex">
               {assignmentForm.truck === "" ? (
-                <div className="text-xs text-slate-700">
-                  Select a truck to load truck details
+                <div className="text-xs text-slate-500">
+                  Select a truck to preview assignment
                 </div>
-
               ) : (
-                trucks.filter((t) => t.id === assignmentForm.truck).map((t) => (
-                  <div key={t.id} className="font-mono text-xs text-slate-400 space-y-0.5">
-                    <div className="text-sm">{t.id}</div>
-                    <div className="pb-1.5">{t.driver}</div>
-                    <div>ROU : {t.route}</div>
-                    <div>DEST: {t.destination}</div>
-                    <div>TEMP: {t.temp}°C</div>
-                  </div>
-                ))
+                trucks
+                  .filter((t) => t.id === assignmentForm.truck)
+                  .map((t) => (
+                    <div key={t.id} className="font-mono text-xs text-slate-400 space-y-0.5">
+                      <div className="text-sm font-semibold text-slate-200">{t.id}</div>
+                      <div className="pb-1 text-cyan-300">{t.driver}</div>
+                      <div>ROUTE: {t.route}</div>
+                      <div>DEST: {t.destination}</div>
+                      <div>TEMP: {t.temp}°C</div>
+                    </div>
+                  ))
               )}
             </div>
           </div>
+        </section>
+      </div>
 
-        </section >
-      </div >
-
-      {/* Operating policy section - footnote */}
-      < div className="panel p-5 pb-1" >
+      {/* Operating policy footer */}
+      <div className="panel p-5 pb-1">
         <div className="font-mono text-[10px] tracking-[.16em] text-slate-500 border-t border-slate-800 pt-4 pl-2">
           OPERATING POLICY
         </div>
@@ -342,8 +383,7 @@ export function Operations() {
             <LockKeyhole size={14} className="text-cyan-300" /> Audit record is immutable after dispatch.
           </div>
         </div>
-      </div >
-
+      </div>
     </>
   );
 }
