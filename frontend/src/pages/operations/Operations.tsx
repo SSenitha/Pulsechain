@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Send, Shield, Wifi, LockKeyhole, AlertCircle, Loader2 } from "lucide-react";
+import { Check, Send, Shield, Wifi, LockKeyhole, AlertCircle, Loader2, CircleCheckBig } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { SectionTitle } from "@/components/shared/SectionTitle";
 import { useApp } from "@/context/AppContext";
@@ -12,6 +12,7 @@ export function Operations() {
 
   const [packageDone, setPackageDone] = useState(false);
   const [dispatchDone, setDispatchDone] = useState(false);
+  const [deliverDone, setDeliverDone] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Form states
@@ -78,6 +79,22 @@ export function Operations() {
     },
   });
 
+  // --- 2. Assign Package Mutation ---
+  const deliverPackageMutation = useMutation({
+    mutationFn: ({ packageId }: { packageId: string }) =>
+      packageService.markPackageDelivered(packageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      setDeliverDone(true);
+      setFormError(null);
+      setAssignmentForm({ packageId: "", truck: "" });
+      setTimeout(() => setDispatchDone(false), 4000);
+    },
+    onError: (err: Error) => {
+      setFormError(err.message || "Failed to mark delivery");
+    },
+  });
+
   // Handlers
   const handleCreatePackage = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -111,6 +128,12 @@ export function Operations() {
       truckId: assignmentForm.truck,
       carrier,
     });
+  };
+
+  const handleDeliverPackage = () => {
+    const packageId = assignmentForm.packageId.trim();
+    if (!packageId) return;
+    deliverPackageMutation.mutate({ packageId });
   };
 
   // Live lookup matching package
@@ -242,6 +265,8 @@ export function Operations() {
           </form>
         </div>
 
+
+        {/* =============================================================================================================================== */}
         {/* Package Dispatch - RHS */}
         <section>
           <form onSubmit={handleDispatchPackage} className="panel p-5 pb-1">
@@ -263,7 +288,7 @@ export function Operations() {
                   required
                   data-testid="input-consignment-packageId"
                   value={assignmentForm.packageId}
-                  onChange={(e) => updateAssignmentForm("packageId", e.target.value)}
+                  onChange={(e) => updateAssignmentForm("packageId", e.target.value.toUpperCase())}
                   placeholder="e.g. PKG-VAX-881"
                   className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 text-xs text-slate-200 outline-none placeholder:text-slate-700 focus:border-cyan-400"
                 />
@@ -306,6 +331,20 @@ export function Operations() {
                 )}
                 {assignPackageMutation.isPending ? "Dispatching..." : "Dispatch"}
               </Button>
+
+              {/* Add deliverd button */}
+              <Button
+                type="button"
+                onClick={handleDeliverPackage}
+                testId="button-dispatch-consignment"
+              >
+                {assignPackageMutation.isPending ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <CircleCheckBig size={14} />
+                )}
+                {assignPackageMutation.isPending ? "Updating..." : "Delivered"}
+              </Button>
             </div>
 
             <div className="mt-6 min-h-[46px]">
@@ -316,6 +355,13 @@ export function Operations() {
                 >
                   <Check size={14} /> CONSIGNMENT DISPATCHED · TRUCK ASSIGNED
                 </div>
+              ) : deliverDone ? (
+                <div
+                  className="flex items-center gap-2 border border-emerald-400/30 bg-emerald-400/10 p-3 font-mono text-[10px] text-emerald-300"
+                  data-testid="status-consignment-delivered"
+                >
+                  <CircleCheckBig size={14} /> CONSIGNMENT DELIVERED
+                </div>
               ) : (
                 <div aria-hidden="true" className="h-[46px] w-full" />
               )}
@@ -323,7 +369,7 @@ export function Operations() {
           </form>
 
           {/* Quick Details Inspection Cards */}
-          <div className="panel p-5 grid gap-4 sm:grid-cols-2">
+          <div className="panel p-5 mt-4 grid gap-4 sm:grid-cols-2">
             <div className="p-3 h-32 overflow-y-auto rounded border border-slate-700 bg-slate-900/40 items-center flex">
               {assignmentForm.packageId.trim() === "" ? (
                 <div className="text-xs text-slate-500">
@@ -368,11 +414,11 @@ export function Operations() {
       </div>
 
       {/* Operating policy footer */}
-      <div className="panel p-5 pb-1">
-        <div className="font-mono text-[10px] tracking-[.16em] text-slate-500 border-t border-slate-800 pt-4 pl-2">
+      <div className="panel p-3 mt-5">
+        <div className="font-mono text-[10px] tracking-[.16em] text-slate-500">
           OPERATING POLICY
         </div>
-        <div className="mt-2 pl-2 text-xs text-slate-500 grid gap-2 sm:grid-cols-3">
+        <div className="mt-2 pl-2 text-xs text-slate-500 grid gap-2 sm:grid-cols-3 place-items-center">
           <div className="flex gap-2">
             <Shield size={14} className="text-cyan-300" /> Threshold breach auto-escalates to command.
           </div>

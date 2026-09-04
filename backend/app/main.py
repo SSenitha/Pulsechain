@@ -189,7 +189,7 @@ def assign_package(package_id: str, data: PackageAssignRequest, db: Session = De
     )
 
 @app.post("/api/v1/packages/{package_id}/delivered", response_model=PackageSchema, tags=["Packages"])
-def assign_package(package_id: str, db: Session = Depends(get_db)):
+def deliver_package(package_id: str, db: Session = Depends(get_db)):
     pkg = db.query(DBPackage).filter(DBPackage.id == package_id).first()
     if not pkg:
         raise HTTPException(status_code=404, detail="Package not found")
@@ -199,6 +199,7 @@ def assign_package(package_id: str, db: Session = Depends(get_db)):
             .filter(DBAssignment.package_id == pkg.id, DBAssignment.unassigned_at == None)
             .first()
         )
+    
     if current_assign:
             current_assign.unassigned_at = datetime.utcnow()
 

@@ -60,7 +60,7 @@ function Router() {
         </AuthenticatedRoute>
       </Route>
       <Route path="/">
-        <Redirect to="/fleet" />
+        <Redirect to="/track" />
       </Route>
       <Route>
         <NotFound />
