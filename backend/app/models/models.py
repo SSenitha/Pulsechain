@@ -7,7 +7,9 @@ class DBUser(Base):
     __tablename__ = "users"
     email = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # 'Operator' | 'Super Admin' | 'Viewer'
+    role = Column(String, nullable=False, default="Viewer")  # 'Operator' | 'Super Admin' | 'Viewer'
+    password = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="Pending")  # 'Active' | 'Pending' | 'Rejected'
 
     logins = relationship("DBLogin", back_populates="user")
 

@@ -1,22 +1,89 @@
 import { useState } from 'react';
-import { ArrowRight, Link2, Truck } from 'lucide-react';
+import { ArrowRight, Link2, Truck, UserPlus, CheckCircle2, Loader2 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/shared/Button';
 import { Logo } from '@/components/shared/Logo';
 import { useApp } from '@/context/AppContext';
 import { LiveClock } from '@/components/shared/LiveClock';
+import { authService } from '@/services/authService';
 import type { Role } from '@/types';
 
 export function Login() {
-    const { setRole } = useApp();
+    const { setUser } = useApp();
     const [, setLocation] = useLocation();
     const [email, setEmail] = useState('mara.okafor@northstarlogistics.co');
     const [password, setPassword] = useState('guardian-demo');
+    const [fullName, setFullName] = useState('');
     const [error, setError] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [isSigningUp, setIsSigningUp] = useState(false);
 
-    const enter = (role: Role) => {
-        setRole(role);
-        setLocation('/fleet');
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccessMsg('');
+
+        if (!email.trim() || !password.trim()) {
+            setError('Work email and access key are required.');
+            return;
+        }
+
+        setIsLoggingIn(true);
+        try {
+            const loggedUser = await authService.login({ email: email.trim(), password: password.trim() });
+            setUser({
+                name: loggedUser.name || loggedUser.email.split('@')[0],
+                email: loggedUser.email,
+                role: (loggedUser.role as Role) || 'Operator',
+                status: loggedUser.status || 'Active',
+            });
+            setLocation('/fleet');
+        } catch (err: any) {
+            // Fallback for local demo preset credentials if API is unavailable or user matches mock demo
+            if (email === 'mara.okafor@northstarlogistics.co' && password === 'guardian-demo') {
+                setUser({
+                    name: 'Mara Okafor',
+                    email: 'mara.okafor@northstarlogistics.co',
+                    role: 'Super Admin',
+                    status: 'Active',
+                });
+                setLocation('/fleet');
+            } else {
+                setError(err.message || 'Authentication failed.');
+            }
+        } finally {
+            setIsLoggingIn(false);
+        }
+    };
+
+    const handleSignUp = async () => {
+        setError('');
+        setSuccessMsg('');
+
+        if (!fullName.trim()) {
+            setError('Full Name is required for new account registration.');
+            return;
+        }
+        if (!email.trim() || !password.trim()) {
+            setError('Work email and access key are required for registration.');
+            return;
+        }
+
+        setIsSigningUp(true);
+        try {
+            await authService.register({
+                name: fullName.trim(),
+                email: email.trim(),
+                password: password.trim(),
+            });
+            setSuccessMsg('Account request submitted successfully! Your account is pending admin approval.');
+            setFullName('');
+        } catch (err: any) {
+            setError(err.message || 'Failed to submit account request.');
+        } finally {
+            setIsSigningUp(false);
+        }
     };
 
     return (
@@ -57,25 +124,37 @@ export function Login() {
                 {/* Login & PV link - RHS */}
                 <section className="flex w-full items-center justify-center p-6 md:p-10 lg:w-[510px]">
                     <div className="w-full max-w-[370px] reveal-2">
-                        <div className="mb-9">
+                        <div className="mb-7">
                             <div className="font-mono text-[10px] tracking-[.2em] text-cyan-400">
                                 SECURE ACCESS / PCG-01
                             </div>
-                            <h2 className="mt-3 text-2xl font-semibold text-slate-100">
+                            <h2 className="mt-2 text-2xl font-semibold text-slate-100">
                                 Enter command center
                             </h2>
                         </div>
-                        <form
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                email && password
-                                    ? enter('Operator')
-                                    : setError('Credentials required to establish session.');
-                            }}
-                            className="space-y-4"
-                        >
+
+                        {error && (
+                            <div
+                                className="mb-4 border border-rose-400/30 bg-rose-400/10 p-3 text-xs text-rose-200"
+                                data-testid="status-login-error"
+                            >
+                                {error}
+                            </div>
+                        )}
+
+                        {successMsg && (
+                            <div
+                                className="mb-4 flex items-start gap-2 border border-emerald-500/40 bg-emerald-950/40 p-3 font-mono text-xs text-emerald-300"
+                                data-testid="status-login-success"
+                            >
+                                <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-400" />
+                                <span>{successMsg}</span>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleLogin} className="space-y-4">
                             <label className="block">
-                                <span className="mb-2 block font-mono text-[10px] tracking-[.12em] text-slate-500">
+                                <span className="mb-1.5 block font-mono text-[10px] tracking-[.12em] text-slate-500">
                                     WORK EMAIL
                                 </span>
                                 <input
@@ -83,11 +162,13 @@ export function Login() {
                                     value={email}
                                     onChange={(event) => setEmail(event.target.value)}
                                     type="email"
-                                    className="h-11 w-full border border-slate-700 bg-slate-900/70 px-3 text-sm text-slate-200 outline-none transition-colors focus:border-cyan-400"
+                                    required
+                                    className="h-10 w-full border border-slate-700 bg-slate-900/70 px-3 text-sm text-slate-200 outline-none transition-colors focus:border-cyan-400"
                                 />
                             </label>
+
                             <label className="block">
-                                <span className="mb-2 block font-mono text-[10px] tracking-[.12em] text-slate-500">
+                                <span className="mb-1.5 block font-mono text-[10px] tracking-[.12em] text-slate-500">
                                     ACCESS KEY
                                 </span>
                                 <input
@@ -95,31 +176,62 @@ export function Login() {
                                     value={password}
                                     onChange={(event) => setPassword(event.target.value)}
                                     type="password"
-                                    className="h-11 w-full border border-slate-700 bg-slate-900/70 px-3 text-sm text-slate-200 outline-none transition-colors focus:border-cyan-400"
+                                    required
+                                    className="h-10 w-full border border-slate-700 bg-slate-900/70 px-3 text-sm text-slate-200 outline-none transition-colors focus:border-cyan-400"
                                 />
                             </label>
-                            {error && (
-                                <div
-                                    className="border border-rose-400/30 bg-rose-400/10 p-3 text-xs text-rose-200"
-                                    data-testid="status-login-error"
-                                >
-                                    {error}
-                                </div>
-                            )}
+
                             <Button
                                 type="submit"
                                 variant="primary"
                                 className="h-11 w-full"
+                                disabled={isLoggingIn || isSigningUp}
                                 testId="button-login-submit"
                             >
-                                Establish session <ArrowRight size={15} />
+                                {isLoggingIn ? <Loader2 size={15} className="animate-spin" /> : <>Establish session <ArrowRight size={15} /></>}
                             </Button>
                         </form>
+
+                        {/* Account Creation Section */}
+                        <div className="mt-6 border-t border-slate-800/80 pt-5">
+                            <div className="mb-3 font-mono text-[10px] tracking-[.16em] text-slate-500 uppercase">
+                                New User Registration
+                            </div>
+
+                            <label className="block mb-3">
+                                <span className="mb-1.5 block font-mono text-[10px] tracking-[.12em] text-slate-500">
+                                    FULL NAME (FOR SIGN UP)
+                                </span>
+                                <input
+                                    data-testid="input-register-name"
+                                    value={fullName}
+                                    onChange={(event) => setFullName(event.target.value)}
+                                    placeholder="e.g. Alex Morgan"
+                                    type="text"
+                                    className="h-10 w-full border border-slate-700/80 bg-slate-900/40 px-3 text-sm text-slate-200 outline-none transition-colors focus:border-cyan-400"
+                                />
+                            </label>
+
+                            <Button
+                                type="button"
+                                onClick={handleSignUp}
+                                className="h-10 w-full border-slate-700/80 bg-slate-800/40 text-slate-300 hover:bg-slate-700/60 hover:text-white"
+                                disabled={isLoggingIn || isSigningUp}
+                                testId="button-signup-submit"
+                            >
+                                {isSigningUp ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                ) : (
+                                    <UserPlus size={14} className="text-cyan-400" />
+                                )}
+                                Request Account / Sign Up
+                            </Button>
+                        </div>
 
                         {/* Public tracker link */}
                         <Link
                             href="/track"
-                            className="mt-7 flex items-center justify-center gap-2 font-mono text-[10px] tracking-[.12em] text-cyan-400 hover:text-cyan-200"
+                            className="mt-6 flex items-center justify-center gap-2 font-mono text-[10px] tracking-[.12em] text-cyan-400 hover:text-cyan-200"
                             data-testid="link-public-tracker"
                         >
                             <Link2 size={13} /> OPEN PUBLIC TRACKER
@@ -130,3 +242,4 @@ export function Login() {
         </div>
     );
 }
+

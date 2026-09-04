@@ -3,12 +3,31 @@ import { Check, Send, Shield, Wifi, LockKeyhole, AlertCircle, Loader2, CircleChe
 import { Button } from "@/components/shared/Button";
 import { SectionTitle } from "@/components/shared/SectionTitle";
 import { useApp } from "@/context/AppContext";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { packageService } from "@/services/packageService";
+import { fleetService } from "@/services/fleetService";
 
 export function Operations() {
-  const { trucks, packages } = useApp();
+  const { trucks: contextTrucks, packages: contextPackages } = useApp();
   const queryClient = useQueryClient();
+
+  // Fetch live fleet / trucks data from database
+  const { data: apiTrucks = [] } = useQuery({
+    queryKey: ["fleet"],
+    queryFn: () => fleetService.getFleetOverview(),
+    refetchInterval: 5000,
+  });
+
+  const trucks = apiTrucks.length ? apiTrucks : contextTrucks;
+
+  // Fetch live packages data from database
+  const { data: apiPackages = [] } = useQuery({
+    queryKey: ["packages"],
+    queryFn: () => packageService.getPackages(),
+    refetchInterval: 5000,
+  });
+
+  const packagesList = apiPackages.length ? apiPackages : contextPackages;
 
   const [packageDone, setPackageDone] = useState(false);
   const [dispatchDone, setDispatchDone] = useState(false);
@@ -79,16 +98,17 @@ export function Operations() {
     },
   });
 
-  // --- 2. Assign Package Mutation ---
+  // --- 3. Deliver Package Mutation ---
   const deliverPackageMutation = useMutation({
     mutationFn: ({ packageId }: { packageId: string }) =>
       packageService.markPackageDelivered(packageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["packages"] });
+      queryClient.invalidateQueries({ queryKey: ["fleet"] });
       setDeliverDone(true);
       setFormError(null);
       setAssignmentForm({ packageId: "", truck: "" });
-      setTimeout(() => setDispatchDone(false), 4000);
+      setTimeout(() => setDeliverDone(false), 4000);
     },
     onError: (err: Error) => {
       setFormError(err.message || "Failed to mark delivery");
@@ -132,7 +152,10 @@ export function Operations() {
 
   const handleDeliverPackage = () => {
     const packageId = assignmentForm.packageId.trim();
-    if (!packageId) return;
+    if (!packageId) {
+      setFormError("Please enter a Package ID to mark as delivered.");
+      return;
+    }
     deliverPackageMutation.mutate({ packageId });
   };
 
@@ -140,7 +163,7 @@ export function Operations() {
   const matchingPackage =
     assignmentForm.packageId.trim() === ""
       ? null
-      : packages.find(
+      : packagesList.find(
         (item) => item.id.toLowerCase() === assignmentForm.packageId.trim().toLowerCase()
       );
 
@@ -332,18 +355,20 @@ export function Operations() {
                 {assignPackageMutation.isPending ? "Dispatching..." : "Dispatch"}
               </Button>
 
-              {/* Add deliverd button */}
+              {/* Deliver button */}
               <Button
                 type="button"
                 onClick={handleDeliverPackage}
-                testId="button-dispatch-consignment"
+                disabled={deliverPackageMutation.isPending}
+                className="bg-emerald-600/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-600/40"
+                testId="button-deliver-consignment"
               >
-                {assignPackageMutation.isPending ? (
+                {deliverPackageMutation.isPending ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : (
                   <CircleCheckBig size={14} />
                 )}
-                {assignPackageMutation.isPending ? "Updating..." : "Delivered"}
+                {deliverPackageMutation.isPending ? "Updating..." : "Delivered"}
               </Button>
             </div>
 

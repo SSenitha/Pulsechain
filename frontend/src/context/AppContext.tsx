@@ -2,7 +2,17 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import { initialPackages, initialTrucks, initialUsers } from '@/data/mockData';
 import type { Package, Truck, User, Role } from '@/types';
 
+export interface UserSession {
+    name: string;
+    email: string;
+    role: Role;
+    status?: string;
+}
+
 type ContextValue = {
+    user: UserSession | null;
+    setUser: (user: UserSession | null) => void;
+    logout: () => void;
     role: Role;
     setRole: (role: Role) => void;
     trucks: Truck[];
@@ -28,7 +38,42 @@ export function useApp() {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-    const [role, setRole] = useState<Role>('Operator');
+    const [user, setUserState] = useState<UserSession | null>(() => {
+        try {
+            const saved = localStorage.getItem('pulsechain_user');
+            if (saved) return JSON.parse(saved);
+        } catch (e) {
+            console.error('Failed to parse user session', e);
+        }
+        return {
+            name: 'Mara Okafor',
+            email: 'mara.okafor@northstarlogistics.co',
+            role: 'Super Admin',
+            status: 'Active',
+        };
+    });
+
+    const setUser = (u: UserSession | null) => {
+        setUserState(u);
+        if (u) {
+            localStorage.setItem('pulsechain_user', JSON.stringify(u));
+        } else {
+            localStorage.removeItem('pulsechain_user');
+        }
+    };
+
+    const logout = () => {
+        setUser(null);
+    };
+
+    const role: Role = user?.role || 'Operator';
+
+    const setRole = (newRole: Role) => {
+        if (user) {
+            setUser({ ...user, role: newRole });
+        }
+    };
+
     const [trucks, setTrucks] = useState(initialTrucks);
     const [packages, setPackages] = useState(initialPackages);
     const [users, setUsers] = useState(initialUsers);
@@ -99,6 +144,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return (
         <AppContext.Provider
             value={{
+                user,
+                setUser,
+                logout,
                 role,
                 setRole,
                 trucks,

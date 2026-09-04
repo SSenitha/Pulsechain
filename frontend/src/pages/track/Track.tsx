@@ -6,14 +6,27 @@ import { Logo } from '@/components/shared/Logo';
 import { SearchBox } from '@/components/shared/SearchBox';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { useApp } from '@/context/AppContext';
+import { useQuery } from '@tanstack/react-query';
+import { packageService } from '@/services/packageService';
 
 export function Track() {
-    const { packages } = useApp();
+    const { packages: contextPackages } = useApp();
+
+    const { data: apiPackages = [] } = useQuery({
+        queryKey: ['packages'],
+        queryFn: () => packageService.getPackages(),
+        refetchInterval: 5000,
+    });
+
+    const packages = apiPackages.length ? apiPackages : contextPackages;
+
     const [query, setQuery] = useState('PKG-VAX-881');
     const [searched, setSearched] = useState('PKG-VAX-881');
     const pkg = packages.find(
         (item) => item.id.toLowerCase() === searched.toLowerCase(),
     );
+
+    const isDelivered = pkg?.eta === 'delivered' || pkg?.updated === 'delivered';
 
     return (
         <div className="min-h-[100dvh] bg-[#071219] text-slate-200 signal-grid">
@@ -75,7 +88,13 @@ export function Track() {
                                         {pkg.product} · LOT {pkg.lot}
                                     </div>
                                 </div>
-                                <StatusBadge health={pkg.health} />
+                                {isDelivered ? (
+                                    <span className="font-mono text-[9px] px-2.5 py-1 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">
+                                        DELIVERED
+                                    </span>
+                                ) : (
+                                    <StatusBadge health={pkg.health} />
+                                )}
                             </div>
                             <div className="mt-6 grid grid-cols-2 gap-3">
                                 <div>
@@ -116,12 +135,12 @@ export function Track() {
                                             `Asset ${pkg.truck}`,
                                             'Seal and sensor pair verified',
                                         ],
-                                        ['11:08:31', 'IN TRANSIT', pkg.destination, `ETA ${pkg.eta}`],
+                                        ['11:08:31', 'IN TRANSIT', pkg.destination, isDelivered ? 'COMPLETED' : `ETA ${pkg.eta}`],
                                         [
                                             'NOW',
-                                            'CURRENT STATUS',
-                                            pkg.health === 'critical' ? 'REVIEW REQUIRED' : 'MONITORING',
-                                            'Pulsechain telemetry active',
+                                            isDelivered ? 'DELIVERED' : 'CURRENT STATUS',
+                                            isDelivered ? 'DELIVERED AT DESTINATION' : (pkg.health === 'critical' ? 'REVIEW REQUIRED' : 'MONITORING'),
+                                            isDelivered ? 'Chain of custody completed & signed' : 'Pulsechain telemetry active',
                                         ],
                                     ].map(([time, event, place, detail], i) => (
                                         <div

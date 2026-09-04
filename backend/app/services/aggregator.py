@@ -72,14 +72,33 @@ def build_package_schema(p: DBPackage, db: Session) -> PackageSchema:
         .filter(DBAssignment.package_id == p.id, DBAssignment.unassigned_at == None)
         .first()
     )
-    truck_id = active_assignment.truck_id if active_assignment else "UNASSIGNED"
-    carrier = active_assignment.truck.driver if active_assignment and active_assignment.truck else "Pending"
+
+    past_assignment = (
+        db.query(DBAssignment)
+        .filter(DBAssignment.package_id == p.id, DBAssignment.unassigned_at != None)
+        .first()
+    )
+
+    if active_assignment:
+        truck_id = active_assignment.truck_id
+        carrier = active_assignment.truck.driver if active_assignment.truck else "Pending"
+        eta = "02:30"
+        updated = "just now"
+    elif past_assignment:
+        truck_id = "DELIVERED"
+        carrier = "Delivered"
+        eta = "delivered"
+        updated = "delivered"
+    else:
+        truck_id = "UNASSIGNED"
+        carrier = "Pending"
+        eta = "04:00:00"
+        updated = "never"
 
     actual_temp = round(p.temp_min + 0.4, 1)
     health = "nominal"
     risk = 8
     tamper = False
-    updated = "never"
 
     if active_assignment:
         latest = (
@@ -99,5 +118,5 @@ def build_package_schema(p: DBPackage, db: Session) -> PackageSchema:
         id=p.id, product=p.product, lot=f"LOT-{p.id[-3:]}", origin=p.origin,
         destination=p.destination, carrier=carrier, tempMin=p.temp_min,
         tempMax=p.temp_max, actual=actual_temp, health=health, risk=risk,
-        truck=truck_id, eta="02:30", tamper=tamper, updated=updated
+        truck=truck_id, eta=eta, tamper=tamper, updated=updated
     )

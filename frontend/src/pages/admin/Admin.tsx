@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Truck, Users, Loader2, CheckCircle2, AlertCircle, MapPin, Navigation } from "lucide-react";
+import { Truck, Users, Loader2, CheckCircle2, AlertCircle, MapPin, Navigation, UserCheck, UserX, Trash2 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { SectionTitle } from "@/components/shared/SectionTitle";
 import { useApp } from "@/context/AppContext";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "@/services/userManagement";
 import { fleetService, type RegisterTruckPayload } from "@/services/fleetService";
 import type { Role } from "@/types";
@@ -11,6 +11,15 @@ import type { Role } from "@/types";
 export function Admin() {
   const { users, trucks } = useApp();
   const queryClient = useQueryClient();
+
+  // Fetch users from database
+  const { data: fetchedUsers } = useQuery({
+    queryKey: ["users"],
+    queryFn: userService.getUsers,
+    refetchInterval: 5000,
+  });
+
+  const displayUsers = fetchedUsers || users;
 
   const [tab, setTab] = useState<"users" | "vehicles" | "audit">("users");
 
@@ -50,6 +59,37 @@ export function Admin() {
     },
     onError: (err: Error) => {
       setErrorMsg(err.message || "Failed to invite user");
+      setSuccessMsg(null);
+    },
+  });
+
+  // --- 1b. Update User Status & Access Level (Role) Mutation ---
+  const updateUserStatusMutation = useMutation({
+    mutationFn: ({ email, status, role }: { email: string; status: "Active" | "Pending" | "Rejected"; role?: Role }) =>
+      userService.updateUserStatus(email, status, role),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setSuccessMsg(`User ${variables.email} profile updated successfully.`);
+      setErrorMsg(null);
+      setTimeout(clearMessages, 4000);
+    },
+    onError: (err: Error) => {
+      setErrorMsg(err.message || "Failed to update user status");
+      setSuccessMsg(null);
+    },
+  });
+
+  // --- 1c. Delete User Profile Mutation ---
+  const deleteUserMutation = useMutation({
+    mutationFn: (email: string) => userService.deleteUser(email),
+    onSuccess: (_, email) => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setSuccessMsg(`User profile ${email} deleted.`);
+      setErrorMsg(null);
+      setTimeout(clearMessages, 4000);
+    },
+    onError: (err: Error) => {
+      setErrorMsg(err.message || "Failed to delete user profile");
       setSuccessMsg(null);
     },
   });
@@ -145,107 +185,126 @@ export function Admin() {
 
       {/* ─── TAB 1: USERS ─────────────────────────────────────────── */}
       {tab === "users" && (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
-          <section className="panel overflow-hidden">
-            <div className="border-b border-slate-800 p-4">
-              <div className="font-mono text-[10px] text-slate-500">
-                AUTHORIZED ACCOUNTS / {users.length}
-              </div>
+        <div className="grid gap-5">
+          <div className="border-b border-slate-800 p-4">
+            <div className="font-mono text-[10px] text-slate-500">
+              AUTHORIZED ACCOUNTS / {displayUsers.length}
             </div>
-            <div className="divide-y divide-slate-800">
-              {users.map((user, i) => (
-                <div
-                  className="flex flex-wrap items-center gap-3 p-4"
-                  key={user.email}
-                  data-testid={`row-user-${i}`}
-                >
-                  <div className="grid h-8 w-8 place-items-center bg-cyan-300/10 font-mono text-[10px] text-cyan-300">
-                    {user.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .join("")}
-                  </div>
-                  <div className="min-w-[180px] flex-1">
-                    <div className="text-xs text-slate-200" data-testid={`text-user-name-${i}`}>
-                      {user.name}
-                    </div>
-                    <div className="mt-1 font-mono text-[9px] text-slate-500">{user.email}</div>
-                  </div>
-                  <span className="border border-slate-700 px-2 py-1 font-mono text-[9px] text-slate-400">
-                    {user.role}
-                  </span>
-                  <span
-                    className={`font-mono text-[9px] ${user.status === "Active" ? "text-emerald-300" : "text-amber-300"
-                      }`}
-                  >
-                    {user.status}
-                  </span>
+          </div>
+          <div className="divide-y divide-slate-800">
+            {displayUsers.map((user, i) => (
+              <div
+                className="flex flex-wrap items-center gap-3 p-4"
+                key={user.email}
+                data-testid={`row-user-${i}`}
+              >
+                <div className="grid h-8 w-8 place-items-center bg-cyan-300/10 font-mono text-[10px] text-cyan-300">
+                  {user.name
+                    .split(" ")
+                    .map((part) => part[0])
+                    .join("")}
                 </div>
-              ))}
-            </div>
-          </section>
-
-          {/* User Invite Form */}
-          <section className="panel p-5">
-            <div className="font-mono text-[10px] tracking-[.16em] text-cyan-400">
-              INVITE OPERATOR
-            </div>
-            <div className="mt-1 text-sm text-slate-200">Add a command user</div>
-            <form onSubmit={handleInviteUser} className="mt-5 space-y-3">
-              <label className="block">
-                <span className="mb-1 block font-mono text-[9px] text-slate-500">FULL NAME*</span>
-                <input
-                  required
-                  data-testid="input-admin-user-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Jane Doe"
-                  className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 text-xs text-slate-200 outline-none focus:border-cyan-400"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block font-mono text-[9px] text-slate-500">WORK EMAIL*</span>
-                <input
-                  required
-                  type="email"
-                  data-testid="input-admin-user-email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@northstarlogistics.co"
-                  className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 text-xs text-slate-200 outline-none focus:border-cyan-400"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block font-mono text-[9px] text-slate-500">ASSIGNED ROLE*</span>
+                <div className="min-w-[180px] flex-1">
+                  <div className="text-xs text-slate-200" data-testid={`text-user-name-${i}`}>
+                    {user.name}
+                  </div>
+                  <div className="mt-1 font-mono text-[9px] text-slate-500">{user.email}</div>
+                </div>
+                {/* Access level (Role) select */}
                 <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as Role)}
-                  className="h-10 w-full border border-slate-700 bg-slate-900/50 px-3 text-xs text-slate-200 outline-none focus:border-cyan-400"
+                  value={user.role}
+                  onChange={(e) =>
+                    updateUserStatusMutation.mutate({
+                      email: user.email,
+                      status: user.status as any,
+                      role: e.target.value as Role,
+                    })
+                  }
+                  className="h-7 border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[10px] text-cyan-300 outline-none hover:border-cyan-400 focus:border-cyan-400 cursor-pointer"
+                  data-testid={`select-user-role-${i}`}
+                  title="Change User Access Level"
                 >
                   <option value="Operator">Operator</option>
-                  <option value="Super Admin">Super Admin</option>
                   <option value="Viewer">Viewer</option>
+                  <option value="Super Admin">Super Admin</option>
                 </select>
-              </label>
 
-              <Button
-                type="submit"
-                variant="primary"
-                className="mt-2 w-full"
-                disabled={inviteUserMutation.isPending}
-                testId="button-admin-invite-user"
-              >
-                {inviteUserMutation.isPending ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Users size={14} />
-                )}
-                {inviteUserMutation.isPending ? "Sending..." : "Send invitation"}
-              </Button>
-            </form>
-          </section>
+                {/* Status badge */}
+                <span
+                  className={`font-mono text-[9px] px-2 py-0.5 rounded border ${user.status === "Active"
+                    ? "border-emerald-500/40 text-emerald-300 bg-emerald-500/10"
+                    : user.status === "Pending"
+                      ? "border-amber-500/50 text-amber-300 bg-amber-500/10 animate-pulse"
+                      : "border-rose-500/40 text-rose-300 bg-rose-500/10"
+                    }`}
+                >
+                  {user.status}
+                </span>
+
+                <div className="flex items-center gap-1.5 ml-auto">
+                  {user.status === "Pending" ? (
+                    <>
+                      <Button
+                        onClick={() =>
+                          updateUserStatusMutation.mutate({
+                            email: user.email,
+                            status: "Active",
+                            role: (user.role as Role) || "Operator",
+                          })
+                        }
+                        className="h-7 px-2.5 text-[10px] bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/40"
+                        disabled={updateUserStatusMutation.isPending}
+                        testId={`button-approve-user-${i}`}
+                      >
+                        <UserCheck size={12} /> Approve
+                      </Button>
+                      <Button
+                        onClick={() =>
+                          updateUserStatusMutation.mutate({
+                            email: user.email,
+                            status: "Rejected",
+                          })
+                        }
+                        className="h-7 px-2 text-[10px] bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/30"
+                        disabled={updateUserStatusMutation.isPending}
+                        testId={`button-reject-user-${i}`}
+                      >
+                        <UserX size={12} /> Reject
+                      </Button>
+                    </>
+                  ) : user.status === "Rejected" ? (
+                    <Button
+                      onClick={() =>
+                        updateUserStatusMutation.mutate({
+                          email: user.email,
+                          status: "Active",
+                        })
+                      }
+                      className="h-7 px-2.5 text-[10px] bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                      disabled={updateUserStatusMutation.isPending}
+                      testId={`button-reapprove-user-${i}`}
+                    >
+                      Re-approve
+                    </Button>
+                  ) : null}
+
+                  {/* Delete profile button */}
+                  <Button
+                    onClick={() => {
+                      if (window.confirm(`Are you sure you want to permanently delete profile "${user.name}" (${user.email})?`)) {
+                        deleteUserMutation.mutate(user.email);
+                      }
+                    }}
+                    className="h-7 px-2 text-[10px] bg-rose-950/40 text-rose-400 border-rose-800/50 hover:bg-rose-900/60"
+                    disabled={deleteUserMutation.isPending}
+                    testId={`button-delete-user-${i}`}
+                  >
+                    <Trash2 size={12} />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

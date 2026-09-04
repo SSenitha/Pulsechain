@@ -1,38 +1,53 @@
 import { useState } from "react";
-import { AlertOctagon, Box, Gauge, PackageCheck, } from "lucide-react";
+import { AlertOctagon, Box, Gauge, PackageCheck, CircleCheckBig } from "lucide-react";
 import { Button } from "@/components/shared/Button";
 import { Metric } from "@/components/shared/Metric";
 import { KpiCard } from "@/components/shared/KpiCard";
 import { SearchBox } from "@/components/shared/SearchBox";
 import { SectionTitle } from "@/components/shared/SectionTitle";
 import { StatusBadge, tone } from "@/components/shared/StatusBadge";
-//import { useApp } from "@/context/AppContext";
 
 // Database Connection
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { packageService } from '@/services/packageService';
 
 export function Packages() {
-  //const { packages } = useApp();
+  const queryClient = useQueryClient();
 
   // Database Connection
   const { data: packages = [] } = useQuery({
     queryKey: ['packages'],
-    queryFn: () => packageService.getPackages()
+    queryFn: () => packageService.getPackages(),
+    refetchInterval: 5000,
   });
-  //---
+
+  const deliverPackageMutation = useMutation({
+    mutationFn: (packageId: string) => packageService.markPackageDelivered(packageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      queryClient.invalidateQueries({ queryKey: ["fleet"] });
+    },
+  });
 
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState("PKG-BIO-302");
   const [filter, setFilter] = useState<"all" | "critical" | "amber">("all");
-  const visible = packages.filter(
+
+  // Exclude delivered packages from active packages view
+  const activePackages = packages.filter(
+    (item) => item.eta !== "delivered" && item.updated !== "delivered"
+  );
+
+  const visible = activePackages.filter(
     (item) =>
       (filter === "all" || item.health === filter) &&
       `${item.id} ${item.product} ${item.destination} ${item.truck}`
         .toLowerCase()
         .includes(query.toLowerCase()),
   );
-  const pkg = packages.find((item) => item.id === selected) || visible[0];
+
+  const pkg = activePackages.find((item) => item.id === selected) || visible[0];
+
   return (
     <>
       <SectionTitle
@@ -47,7 +62,7 @@ export function Packages() {
               }
               testId="button-filter-packages-all"
             >
-              All {packages.length}
+              All {activePackages.length}
             </Button>
             <Button
               onClick={() => setFilter("critical")}
@@ -75,24 +90,24 @@ export function Packages() {
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard
           name="In transit"
-          value={String(packages.length)}
+          value={String(activePackages.length)}
           note="active consignments"
         />
         <KpiCard
           name="Thermal nominal"
-          value={String(packages.filter((p) => p.health === "nominal").length)}
+          value={String(activePackages.filter((p) => p.health === "nominal").length)}
           note="within allowed band"
           accent="emerald"
         />
         <KpiCard
           name="Excursions"
-          value="01"
+          value={String(activePackages.filter((p) => p.health === "critical").length)}
           note="requires intervention"
           accent="rose"
         />
         <KpiCard
           name="Tamper signals"
-          value="01"
+          value={String(activePackages.filter((p) => p.tamper).length)}
           note="open investigation"
           accent="orange"
         />
@@ -155,7 +170,7 @@ export function Packages() {
             >
               <PackageCheck size={25} className="mx-auto text-slate-700" />
               <p className="mt-3 text-sm text-slate-400">
-                No packages in this view.
+                No active packages in this view.
               </p>
               <button
                 onClick={() => {
@@ -188,7 +203,17 @@ export function Packages() {
                     {pkg.product} · LOT {pkg.lot}
                   </p>
                 </div>
-                <StatusBadge health={pkg.health} />
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => deliverPackageMutation.mutate(pkg.id)}
+                    disabled={deliverPackageMutation.isPending}
+                    className="h-7 text-[10px] bg-emerald-600/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-600/40"
+                    testId={`button-deliver-package-${pkg.id}`}
+                  >
+                    <CircleCheckBig size={12} /> {deliverPackageMutation.isPending ? "Updating..." : "Mark Delivered"}
+                  </Button>
+                  <StatusBadge health={pkg.health} />
+                </div>
               </div>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <div

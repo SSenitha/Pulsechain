@@ -190,10 +190,10 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
 
             <div
               className={`rounded-xl border p-4 ${truck.risk > 70
-                  ? "border-rose-400/40 bg-rose-400/[.07]"
-                  : truck.risk > 40
-                    ? "border-amber-400/40 bg-amber-400/[.07]"
-                    : "border-slate-700/60 bg-slate-800/30"
+                ? "border-rose-400/40 bg-rose-400/[.07]"
+                : truck.risk > 40
+                  ? "border-amber-400/40 bg-amber-400/[.07]"
+                  : "border-slate-700/60 bg-slate-800/30"
                 }`}
             >
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 uppercase tracking-wide">
@@ -375,7 +375,13 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
 
 // ─── Main Fleet Page ──────────────────────────────────────────────────────────
 export function Fleet() {
-  const { trucks } = useApp();
+  // const { trucks } = useApp();
+  const { data: trucks = [], isLoading } = useQuery({
+    queryKey: ["fleet"],
+    queryFn: fleetService.getFleetOverview,
+    refetchInterval: 5000,
+  });
+
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<"all" | "critical" | "amber">("all");
   const [query, setQuery] = useState("");
@@ -449,8 +455,8 @@ export function Fleet() {
                 key={`alert-${truck.id}`}
                 onClick={() => setModalTruck(truck)}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all flex items-center justify-between ${truck.health === "critical"
-                    ? "border-rose-500/60 bg-rose-950/40 animate-pulse hover:bg-rose-900/50"
-                    : "border-amber-500/60 bg-amber-950/40 hover:bg-amber-900/50"
+                  ? "border-rose-500/60 bg-rose-950/40 animate-pulse hover:bg-rose-900/50"
+                  : "border-amber-500/60 bg-amber-950/40 hover:bg-amber-900/50"
                   }`}
               >
                 <div>

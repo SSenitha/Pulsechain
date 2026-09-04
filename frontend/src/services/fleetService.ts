@@ -11,7 +11,7 @@ export interface RegisterTruckPayload {
 
 export const fleetService = {
   getFleetOverview: () => {
-    return apiClient<Truck[]>('/fleet/overview');
+    return apiClient<Truck[]>('/fleet');
   },
 
   getTruckTelemetry: (truckId: string, limit: number = 50) => {

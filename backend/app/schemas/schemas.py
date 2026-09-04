@@ -16,6 +16,19 @@ class UserInviteRequest(BaseModel):
     email: str
     role: Literal['Operator', 'Super Admin', 'Viewer']
 
+class UserRegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class UserLoginRequest(BaseModel):
+    email: str
+    password: str
+
+class UserStatusUpdateRequest(BaseModel):
+    status: Literal['Active', 'Pending', 'Rejected']
+    role: Optional[Literal['Operator', 'Super Admin', 'Viewer']] = None
+
 class TruckSchema(BaseModel):
     id: str
     driver: str

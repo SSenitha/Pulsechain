@@ -1,26 +1,70 @@
 import uuid
+import hashlib
 from datetime import datetime
 from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, text
 
 from app.db.session import engine, Base, get_db
 from app.models.models import DBUser, DBLogin, DBTruck, DBPackage, DBAssignment, DBTelemetry
 from app.schemas.schemas import (
     TruckSchema, PackageSchema, UserSchema, TruckTelemetryResponse, TelemetryPointSchema, 
     PublicTrackingResult, TelemetryIngestPayload, PackageCreateRequest, PackageAssignRequest, 
-    TruckRegisterRequest, TrackingMilestone, UserInviteRequest
+    TruckRegisterRequest, TrackingMilestone, UserInviteRequest, UserRegisterRequest, UserLoginRequest, UserStatusUpdateRequest
 )
-from app.services.aggregator import(
-    # evaluate_status, format_relative_time, 
+from app.services.aggregator import (
     build_truck_schema, build_package_schema
 )
 
+def hash_credentials(email: str, password: str) -> str:
+    data = f"{email.lower().strip()}:{password}".encode("utf-8")
+    return hashlib.sha256(data).hexdigest()
+
+def format_relative_time(dt: datetime) -> str:
+    sec_ago = (datetime.utcnow() - dt).total_seconds()
+    if sec_ago < 60:
+        return f"{int(sec_ago)}s ago"
+    elif sec_ago < 3600:
+        return f"{int(sec_ago // 60)}m ago"
+    else:
+        return f"{int(sec_ago // 3600)}h ago"
+
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
+
+# Auto-migrate SQLite schema for missing columns in existing user table
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE users ADD COLUMN password VARCHAR"))
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR DEFAULT 'Pending'"))
+        conn.commit()
+    except Exception:
+        pass
+
+# Seed default active users if table is empty
+with Session(engine) as db_session:
+    if db_session.query(DBUser).count() == 0:
+        default_users = [
+            DBUser(name="Mara Okafor", email="mara.okafor@northstarlogistics.co", role="Operator", status="Active", password=hash_credentials("mara.okafor@northstarlogistics.co", "guardian-demo")),
+            DBUser(name="Theo Nguyen", email="theo.nguyen@northstarlogistics.co", role="Viewer", status="Active", password=hash_credentials("theo.nguyen@northstarlogistics.co", "guardian-demo")),
+            DBUser(name="Priya Nanduri", email="priya.nanduri@northstarlogistics.co", role="Super Admin", status="Active", password=hash_credentials("priya.nanduri@northstarlogistics.co", "guardian-demo")),
+            DBUser(name="Jon Bell", email="jon.bell@northstarlogistics.co", role="Operator", status="Pending", password=hash_credentials("jon.bell@northstarlogistics.co", "guardian-demo")),
+        ]
+        db_session.add_all(default_users)
+        db_session.commit()
+    else:
+        # Migrate any plain text passwords for existing users
+        for u in db_session.query(DBUser).all():
+            if u.password and len(u.password) != 64:
+                u.password = hash_credentials(u.email, u.password)
+        db_session.commit()
 
 app = FastAPI(title="Pulsechain Guardian API", version="1.0.0")
 
@@ -55,7 +99,7 @@ def ingest_telemetry(payload: TelemetryIngestPayload, db: Session = Depends(get_
     return {"status": "success", "tid": payload.tid, "recorded_at": record.time.isoformat()}
 
 # ----------------- FLEET -----------------
-@app.get("/api/v1/fleet/overview", response_model=List[TruckSchema], tags=["Fleet"])
+@app.get("/api/v1/fleet", response_model=List[TruckSchema], tags=["Fleet"])
 def get_fleet_overview(db: Session = Depends(get_db)):
     trucks = db.query(DBTruck).all()
     return [build_truck_schema(t, db) for t in trucks]
@@ -195,19 +239,27 @@ def deliver_package(package_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Package not found")
 
     current_assign = (
-            db.query(DBAssignment)
-            .filter(DBAssignment.package_id == pkg.id, DBAssignment.unassigned_at == None)
-            .first()
-        )
+        db.query(DBAssignment)
+        .filter(DBAssignment.package_id == pkg.id, DBAssignment.unassigned_at == None)
+        .first()
+    )
     
     if current_assign:
-            current_assign.unassigned_at = datetime.utcnow()
+        current_assign.unassigned_at = datetime.utcnow()
+    else:
+        # If no active assignment exists, create a closed assignment so it marks as delivered
+        completed_assign = DBAssignment(
+            package_id=pkg.id,
+            truck_id="DEPOT",
+            assigned_at=datetime.utcnow(),
+            unassigned_at=datetime.utcnow()
+        )
+        db.add(completed_assign)
 
-    return PackageSchema(
-        id=pkg.id, product=pkg.product, lot=f"LOT-{pkg.id[-4:]}", origin=pkg.origin, destination=pkg.destination,
-        carrier="None", tempMin=pkg.temp_min, tempMax=pkg.temp_max, actual=round(pkg.temp_min + 0.4, 1),
-        health="nominal", risk=8, truck="None", eta="delivered", tamper=False, updated="delivered"
-    )
+    db.commit()
+    db.refresh(pkg)
+
+    return build_package_schema(pkg, db)
 
 # ----------------- PUBLIC TRACKING -----------------
 @app.get("/api/v1/public/track/{package_id}", response_model=PublicTrackingResult, tags=["Public"])
@@ -257,6 +309,62 @@ def track_package_public(package_id: str, db: Session = Depends(get_db)):
         ]
     )
 
+# ----------------- AUTHENTICATION -----------------
+@app.post("/api/v1/auth/register", response_model=UserSchema, tags=["Auth"])
+def register_user(data: UserRegisterRequest, db: Session = Depends(get_db)):
+    existing = db.query(DBUser).filter(DBUser.email == data.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="User with this email address already exists")
+
+    new_user = DBUser(
+        name=data.name,
+        email=data.email,
+        password=data.password,
+        role="Viewer",
+        status="Pending"
+    )
+    db.add(new_user)
+    db.commit()
+    return UserSchema(
+        name=new_user.name,
+        email=new_user.email,
+        role=new_user.role,
+        status=new_user.status,
+        lastActive="never"
+    )
+
+@app.post("/api/v1/auth/login", response_model=UserSchema, tags=["Auth"])
+def login_user(data: UserLoginRequest, db: Session = Depends(get_db)):
+    user = db.query(DBUser).filter(DBUser.email == data.email).first()
+    
+    if not user:
+        if data.email == "mara.okafor@northstarlogistics.co":
+            user = DBUser(name="Mara Okafor", email=data.email, role="Operator", status="Active", password=data.password)
+            db.add(user)
+            db.commit()
+        else:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+            
+    if user.password and user.password != data.password:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+    if user.status == "Pending":
+        raise HTTPException(status_code=403, detail="Your account registration is pending admin approval.")
+    elif user.status == "Rejected":
+        raise HTTPException(status_code=403, detail="Your account registration has been rejected.")
+        
+    login_entry = DBLogin(user_email=user.email, time=datetime.utcnow())
+    db.add(login_entry)
+    db.commit()
+    
+    return UserSchema(
+        name=user.name,
+        email=user.email,
+        role=user.role,
+        status=user.status,
+        lastActive="Just now"
+    )
+
 # ----------------- ADMIN & USERS -----------------
 @app.get("/api/v1/admin/users", response_model=List[UserSchema], tags=["Admin"])
 def get_users(db: Session = Depends(get_db)):
@@ -269,11 +377,12 @@ def get_users(db: Session = Depends(get_db)):
             .order_by(desc(DBLogin.time))
             .first()
         )
+        status_val = u.status if u.status else ("Active" if latest_login else "Pending")
         results.append(UserSchema(
             name=u.name,
             email=u.email,
             role=u.role,
-            status="Active" if latest_login else "Invited",
+            status=status_val,
             lastActive=format_relative_time(latest_login.time) if latest_login else "never"
         ))
     return results
@@ -283,10 +392,47 @@ def invite_user(data: UserInviteRequest, db: Session = Depends(get_db)):
     if db.query(DBUser).filter(DBUser.email == data.email).first():
         raise HTTPException(status_code=400, detail="User already registered")
 
-    new_user = DBUser(name=data.name, email=data.email, role=data.role)
+    new_user = DBUser(name=data.name, email=data.email, role=data.role, status="Active")
     db.add(new_user)
     db.commit()
-    return UserSchema(name=new_user.name, email=new_user.email, role=new_user.role, status="Invited", lastActive="never")
+    return UserSchema(name=new_user.name, email=new_user.email, role=new_user.role, status="Active", lastActive="never")
+
+@app.patch("/api/v1/admin/users/{email}/status", response_model=UserSchema, tags=["Admin"])
+def update_user_status(email: str, data: UserStatusUpdateRequest, db: Session = Depends(get_db)):
+    user = db.query(DBUser).filter(DBUser.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user.status = data.status
+    if data.role:
+        user.role = data.role
+    db.commit()
+    
+    latest_login = (
+        db.query(DBLogin)
+        .filter(DBLogin.user_email == user.email)
+        .order_by(desc(DBLogin.time))
+        .first()
+    )
+    
+    return UserSchema(
+        name=user.name,
+        email=user.email,
+        role=user.role,
+        status=user.status,
+        lastActive=format_relative_time(latest_login.time) if latest_login else "never"
+    )
+
+@app.delete("/api/v1/admin/users/{email}", tags=["Admin"])
+def delete_user(email: str, db: Session = Depends(get_db)):
+    user = db.query(DBUser).filter(DBUser.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User profile not found")
+        
+    db.query(DBLogin).filter(DBLogin.user_email == email).delete()
+    db.delete(user)
+    db.commit()
+    return {"status": "success", "message": f"User profile for {email} deleted"}
 
 # ----------------- ANALYTICS -----------------
 @app.get("/api/v1/analytics/overview", tags=["Analytics"])

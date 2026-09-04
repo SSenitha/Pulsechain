@@ -14,9 +14,24 @@ export const metric = (value: string | number, unit = '') => (
 );
 
 export function Shell({ children }: { children: ReactNode }) {
-    const { role, setRole } = useApp();
+    const { user, logout, role } = useApp();
     const [location, setLocation] = useLocation();
     const [open, setOpen] = useState(false);
+
+    const getInitials = (name?: string) => {
+        if (!name) return 'U';
+        const parts = name.trim().split(' ');
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+        return name.slice(0, 2).toUpperCase();
+    };
+
+    const handleLogout = () => {
+        logout();
+        setLocation('/login');
+    };
+
     const nav = [
         { href: '/fleet', label: 'Fleet Dashboard', icon: Truck },
         { href: '/packages', label: 'Package Dashboard', icon: Box },
@@ -128,41 +143,31 @@ export function Shell({ children }: { children: ReactNode }) {
                             <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
                         </button>
 
-                        {/* User Profile button --> Should make dynamic (later) */}
+                        {/* User Profile Badge */}
                         <div className="relative">
-                            <button
-                                onClick={() =>
-                                    setRole(
-                                        role === 'Operator'
-                                            ? 'Super Admin'
-                                            : role === 'Super Admin'
-                                                ? 'Viewer'
-                                                : 'Operator',
-                                    )
-                                }
-                                className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/50 px-2.5 py-1.5 text-left transition-all hover:border-cyan-400/40 hover:bg-slate-700/60"
-                                data-testid="button-role-switcher"
+                            <div
+                                className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/50 px-2.5 py-1.5 text-left"
+                                data-testid="user-profile-badge"
                             >
-                                <span className="grid h-6 w-6 place-items-center rounded-full bg-orange-400/15 font-mono text-[10px] text-orange-300">
-                                    MO
+                                <span className="grid h-6 w-6 place-items-center rounded-full bg-orange-400/15 font-mono text-[10px] font-semibold text-orange-300">
+                                    {getInitials(user?.name)}
                                 </span>
                                 <span className="hidden sm:block">
-                                    <span className="block text-[10px] text-slate-200">
-                                        Mara Okafor
+                                    <span className="block text-[10px] font-medium text-slate-200">
+                                        {user?.name || 'Mara Okafor'}
                                     </span>
                                     <span className="block font-mono text-[9px] text-cyan-400">
                                         {role.toUpperCase()}
                                     </span>
                                 </span>
-                                <ChevronDown size={13} className="text-slate-500" />
-                            </button>
+                            </div>
                         </div>
 
                         {/* Logout button */}
                         <Button
                             variant="ghost"
-                            className="px-2"
-                            onClick={() => setLocation('/login')}
+                            className="px-2 hover:text-rose-300"
+                            onClick={handleLogout}
                             testId="button-logout"
                         >
                             <LogOut size={15} />
