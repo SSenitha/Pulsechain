@@ -16,7 +16,7 @@ from app.schemas.schemas import (
     TruckRegisterRequest, TrackingMilestone, UserInviteRequest, UserRegisterRequest, UserLoginRequest, UserStatusUpdateRequest
 )
 from app.services.aggregator import (
-    build_truck_schema, build_package_schema
+    evaluate_status, build_truck_schema, build_package_schema
 )
 
 def hash_credentials(email: str, password: str) -> str:
@@ -122,11 +122,11 @@ def get_truck_telemetry(truck_id: str, limit: int = 50, db: Session = Depends(ge
 
     history = [
         TelemetryPointSchema(
-            time=h.time.strftime("%H:%M"),
+            time=h.time.strftime("%H:%M:%S"),
             temp=h.temp,
             humidity=h.humidity,
             lux=40.0 if h.tamper else 6.0,
-            risk=80 if h.tamper or h.temp > 8.0 else 12
+            risk=evaluate_status(h.temp, current.tempMin, current.tempMax, h.tamper)[1]
         )
         for h in history_logs
     ]

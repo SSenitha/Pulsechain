@@ -43,6 +43,8 @@ class TruckSchema(BaseModel):
     eta: str
     ssid: str
     lastSeen: str
+    tempMin: float = 2.0
+    tempMax: float = 8.0
     model_config = ConfigDict(from_attributes=True)
 
 class TruckRegisterRequest(BaseModel):

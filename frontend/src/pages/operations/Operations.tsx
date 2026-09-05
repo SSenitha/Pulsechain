@@ -15,7 +15,7 @@ export function Operations() {
   const { data: apiTrucks = [] } = useQuery({
     queryKey: ["fleet"],
     queryFn: () => fleetService.getFleetOverview(),
-    refetchInterval: 5000,
+    refetchInterval: 2000,
   });
 
   const trucks = apiTrucks.length ? apiTrucks : contextTrucks;
@@ -24,7 +24,7 @@ export function Operations() {
   const { data: apiPackages = [] } = useQuery({
     queryKey: ["packages"],
     queryFn: () => packageService.getPackages(),
-    refetchInterval: 5000,
+    refetchInterval: 2000,
   });
 
   const packagesList = apiPackages.length ? apiPackages : contextPackages;

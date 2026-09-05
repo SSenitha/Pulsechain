@@ -18,7 +18,7 @@ export function Packages() {
   const { data: packages = [] } = useQuery({
     queryKey: ['packages'],
     queryFn: () => packageService.getPackages(),
-    refetchInterval: 5000,
+    refetchInterval: 2000,
   });
 
   const deliverPackageMutation = useMutation({

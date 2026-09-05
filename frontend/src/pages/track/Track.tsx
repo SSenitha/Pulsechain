@@ -15,7 +15,7 @@ export function Track() {
     const { data: apiPackages = [] } = useQuery({
         queryKey: ['packages'],
         queryFn: () => packageService.getPackages(),
-        refetchInterval: 5000,
+        refetchInterval: 2000,
     });
 
     const packages = apiPackages.length ? apiPackages : contextPackages;

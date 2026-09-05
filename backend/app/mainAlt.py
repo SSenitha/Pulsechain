@@ -73,7 +73,7 @@ def get_truck_telemetry(truck_id: str, limit: int = 50, db: Session = Depends(ge
 
     history = [
         TelemetryPointSchema(
-            time=h.time.strftime("%H:%M"),
+            time=h.time.strftime("%H:%M:%S"),
             temp=h.temp,
             humidity=h.humidity,
             lux=40.0 if h.tamper else 6.0,

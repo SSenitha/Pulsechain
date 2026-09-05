@@ -93,9 +93,9 @@ export function Shell({ children }: { children: ReactNode }) {
                 {/* Navigation footer --> Should make dynamic (later) */}
                 <div className="mt-auto border-t border-slate-800 p-4">
                     <div className="font-mono text-[9px] leading-5 text-slate-600">
-                        INGEST / 12 VEHICLES
+                        INGEST / 6 ACTIVE FLEET
                         <br />
-                        TELEMETRY / 4.8 SEC LATENCY
+                        TELEMETRY / 1.0 SEC STREAM
                         <br />
                         REGION / SRI LANKA
                     </div>

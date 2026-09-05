@@ -1,0 +1,619 @@
+{
+  "communities": {
+    "0": [
+      "frontend_package_dependencies",
+      "frontend_package_dependencies_class_variance_authority",
+      "frontend_package_dependencies_clsx",
+      "frontend_package_dependencies_lucide_react",
+      "frontend_package_dependencies_radix_ui_react_toast",
+      "frontend_package_dependencies_radix_ui_react_tooltip",
+      "frontend_package_dependencies_react",
+      "frontend_package_dependencies_react_dom",
+      "frontend_package_dependencies_recharts",
+      "frontend_package_dependencies_tailwind_merge",
+      "frontend_package_dependencies_tailwindcss",
+      "frontend_package_dependencies_tailwindcss_vite",
+      "frontend_package_dependencies_tanstack_react_query",
+      "frontend_package_dependencies_wouter",
+      "frontend_package_devdependencies",
+      "frontend_package_devdependencies_oxlint",
+      "frontend_package_devdependencies_types_node",
+      "frontend_package_devdependencies_types_react",
+      "frontend_package_devdependencies_types_react_dom",
+      "frontend_package_devdependencies_typescript",
+      "frontend_package_devdependencies_vite",
+      "frontend_package_devdependencies_vitejs_plugin_react",
+      "frontend_package_json",
+      "frontend_package_name",
+      "frontend_package_private",
+      "frontend_package_scripts",
+      "frontend_package_scripts_build",
+      "frontend_package_scripts_dev",
+      "frontend_package_scripts_lint",
+      "frontend_package_scripts_preview",
+      "frontend_package_type",
+      "frontend_package_unused_dependancies",
+      "frontend_package_unused_dependancies_radix_ui_react_avatar",
+      "frontend_package_unused_dependancies_radix_ui_react_checkbox",
+      "frontend_package_unused_dependancies_radix_ui_react_dialog",
+      "frontend_package_unused_dependancies_radix_ui_react_dropdown_menu",
+      "frontend_package_unused_dependancies_radix_ui_react_popover",
+      "frontend_package_unused_dependancies_radix_ui_react_select",
+      "frontend_package_unused_dependancies_radix_ui_react_separator",
+      "frontend_package_unused_dependancies_radix_ui_react_slot",
+      "frontend_package_unused_dependancies_radix_ui_react_switch",
+      "frontend_package_unused_dependancies_radix_ui_react_tabs",
+      "frontend_package_version"
+    ],
+    "1": [
+      "app_mainalt_get_fleet_overview",
+      "app_mainalt_get_packages",
+      "app_mainalt_get_truck_telemetry",
+      "app_mainalt_get_users",
+      "app_mainalt_health_check",
+      "app_mainalt_ingest_telemetry",
+      "app_mainalt_track_package_public",
+      "backend_app_mainalt_py",
+      "backend_app_mainalt_py_int",
+      "backend_app_mainalt_py_session",
+      "backend_app_mainalt_py_str",
+      "backend_app_mainalt_py_telemetryingestpayload",
+      "backend_app_models_models_py",
+      "backend_app_services_aggregator_py",
+      "backend_app_services_aggregator_py_session",
+      "backend_seed_py",
+      "backend_seed_run_seed",
+      "base",
+      "bool",
+      "dbpackage",
+      "dbtruck",
+      "float",
+      "models_models_dbassignment",
+      "models_models_dblogin",
+      "models_models_dbpackage",
+      "models_models_dbtelemetry",
+      "models_models_dbtruck",
+      "models_models_dbuser",
+      "packageschema",
+      "services_aggregator_build_package_schema",
+      "services_aggregator_build_truck_schema",
+      "services_aggregator_evaluate_status",
+      "truckschema"
+    ],
+    "2": [
+      "frontend_src_services_apiclient_ts",
+      "frontend_src_services_authservice_ts",
+      "frontend_src_services_fleetservice_ts",
+      "frontend_src_services_packageservice_ts",
+      "frontend_src_services_usermanagement_ts",
+      "frontend_src_types_index_ts",
+      "services_apiclient_apiclient",
+      "services_apiclient_fetchoptions",
+      "services_authservice_authservice",
+      "services_authservice_hashcredentials",
+      "services_authservice_loginpayload",
+      "services_authservice_registerpayload",
+      "services_fleetservice_fleetservice",
+      "services_fleetservice_registertruckpayload",
+      "services_packageservice_assignpackagepayload",
+      "services_packageservice_packageservice",
+      "services_usermanagement_inviteuserpayload",
+      "services_usermanagement_userservice",
+      "types_index_health",
+      "types_index_package",
+      "types_index_publictrackingresult",
+      "types_index_role",
+      "types_index_telemetrypoint",
+      "types_index_trackingmilestone",
+      "types_index_truck",
+      "types_index_trucktelemetry",
+      "types_index_user"
+    ],
+    "3": [
+      "app_main_truckregisterrequest",
+      "backend_app_main_py_int",
+      "backend_app_main_py_telemetryingestpayload",
+      "backend_app_schemas_schemas_py",
+      "basemodel",
+      "datetime",
+      "packageassignrequest",
+      "packagecreaterequest",
+      "schemas_schemas_packageassignrequest",
+      "schemas_schemas_packagecreaterequest",
+      "schemas_schemas_packageschema",
+      "schemas_schemas_publictrackingresult",
+      "schemas_schemas_telemetryingestpayload",
+      "schemas_schemas_telemetrypointschema",
+      "schemas_schemas_trackingmilestone",
+      "schemas_schemas_truckregisterrequest",
+      "schemas_schemas_truckschema",
+      "schemas_schemas_trucktelemetryresponse",
+      "schemas_schemas_userinviterequest",
+      "schemas_schemas_userloginrequest",
+      "schemas_schemas_userregisterrequest",
+      "schemas_schemas_userstatusupdaterequest",
+      "userinviterequest",
+      "userloginrequest",
+      "userregisterrequest",
+      "userstatusupdaterequest"
+    ],
+    "4": [
+      "app_main_assign_package",
+      "app_main_create_package",
+      "app_main_delete_user",
+      "app_main_deliver_package",
+      "app_main_format_relative_time",
+      "app_main_get_analytics_overview",
+      "app_main_get_fleet_overview",
+      "app_main_get_packages",
+      "app_main_get_truck_telemetry",
+      "app_main_get_users",
+      "app_main_hash_credentials",
+      "app_main_health_check",
+      "app_main_ingest_telemetry",
+      "app_main_invite_user",
+      "app_main_login_user",
+      "app_main_register_truck",
+      "app_main_register_user",
+      "app_main_track_package_public",
+      "app_main_update_user_status",
+      "backend_app_main_py",
+      "backend_app_main_py_session",
+      "backend_app_main_py_str",
+      "schemas_schemas_userschema"
+    ],
+    "5": [
+      "admin_admin_admin",
+      "context_appcontext_appcontext",
+      "context_appcontext_appprovider",
+      "context_appcontext_contextvalue",
+      "context_appcontext_useapp",
+      "context_appcontext_usersession",
+      "frontend_src_components_layout_shell_tsx",
+      "frontend_src_context_appcontext_tsx",
+      "frontend_src_pages_admin_admin_tsx",
+      "frontend_src_pages_dashboard_tsx",
+      "frontend_src_pages_login_login_tsx",
+      "frontend_src_pages_operations_operations_tsx",
+      "frontend_src_pages_track_track_tsx",
+      "layout_shell_metric",
+      "layout_shell_shell",
+      "login_login_login",
+      "operations_operations_operations",
+      "pages_dashboard_app",
+      "pages_dashboard_authenticatedroute",
+      "pages_dashboard_queryclient",
+      "pages_dashboard_router",
+      "track_track_track"
+    ],
+    "6": [
+      "frontend_tsconfig_app_compileroptions",
+      "frontend_tsconfig_app_compileroptions_allowarbitraryextensions",
+      "frontend_tsconfig_app_compileroptions_allowimportingtsextensions",
+      "frontend_tsconfig_app_compileroptions_erasablesyntaxonly",
+      "frontend_tsconfig_app_compileroptions_jsx",
+      "frontend_tsconfig_app_compileroptions_lib",
+      "frontend_tsconfig_app_compileroptions_module",
+      "frontend_tsconfig_app_compileroptions_moduledetection",
+      "frontend_tsconfig_app_compileroptions_moduleresolution",
+      "frontend_tsconfig_app_compileroptions_noemit",
+      "frontend_tsconfig_app_compileroptions_nofallthroughcasesinswitch",
+      "frontend_tsconfig_app_compileroptions_nounusedlocals",
+      "frontend_tsconfig_app_compileroptions_nounusedparameters",
+      "frontend_tsconfig_app_compileroptions_paths",
+      "frontend_tsconfig_app_compileroptions_skiplibcheck",
+      "frontend_tsconfig_app_compileroptions_target",
+      "frontend_tsconfig_app_compileroptions_tsbuildinfofile",
+      "frontend_tsconfig_app_compileroptions_types",
+      "frontend_tsconfig_app_compileroptions_verbatimmodulesyntax",
+      "frontend_tsconfig_app_include",
+      "frontend_tsconfig_app_json",
+      "frontend_tsconfig_app_paths"
+    ],
+    "7": [
+      "frontend_tsconfig_node_compileroptions",
+      "frontend_tsconfig_node_compileroptions_allowimportingtsextensions",
+      "frontend_tsconfig_node_compileroptions_erasablesyntaxonly",
+      "frontend_tsconfig_node_compileroptions_lib",
+      "frontend_tsconfig_node_compileroptions_module",
+      "frontend_tsconfig_node_compileroptions_moduledetection",
+      "frontend_tsconfig_node_compileroptions_noemit",
+      "frontend_tsconfig_node_compileroptions_nofallthroughcasesinswitch",
+      "frontend_tsconfig_node_compileroptions_nounusedlocals",
+      "frontend_tsconfig_node_compileroptions_nounusedparameters",
+      "frontend_tsconfig_node_compileroptions_skiplibcheck",
+      "frontend_tsconfig_node_compileroptions_target",
+      "frontend_tsconfig_node_compileroptions_tsbuildinfofile",
+      "frontend_tsconfig_node_compileroptions_types",
+      "frontend_tsconfig_node_compileroptions_verbatimmodulesyntax",
+      "frontend_tsconfig_node_include",
+      "frontend_tsconfig_node_json"
+    ],
+    "8": [
+      "frontend_src_components_ui_toaster_tsx",
+      "frontend_src_hooks_use_toast_ts",
+      "hooks_use_toast_action",
+      "hooks_use_toast_actiontype",
+      "hooks_use_toast_actiontypes",
+      "hooks_use_toast_addtoremovequeue",
+      "hooks_use_toast_dispatch",
+      "hooks_use_toast_genid",
+      "hooks_use_toast_listeners",
+      "hooks_use_toast_memorystate",
+      "hooks_use_toast_reducer",
+      "hooks_use_toast_state",
+      "hooks_use_toast_toast",
+      "hooks_use_toast_toastertoast",
+      "hooks_use_toast_toasttimeouts",
+      "hooks_use_toast_usetoast",
+      "ui_toaster_toaster"
+    ],
+    "9": [
+      "components_error_boundary_defaultfallback",
+      "components_error_boundary_errorboundary",
+      "components_error_boundary_errorboundary_componentdidcatch",
+      "components_error_boundary_errorboundary_componentdidupdate",
+      "components_error_boundary_errorboundary_getderivedstatefromerror",
+      "components_error_boundary_errorboundary_render",
+      "components_error_boundary_errorboundaryprops",
+      "components_error_boundary_errorboundarystate",
+      "components_error_boundary_errorfallbackprops",
+      "components_error_boundary_toerror",
+      "frontend_src_components_error_boundary_tsx"
+    ],
+    "10": [
+      "frontend_src_components_ui_toast_tsx",
+      "ui_toast_toast",
+      "ui_toast_toastaction",
+      "ui_toast_toastactionelement",
+      "ui_toast_toastclose",
+      "ui_toast_toastdescription",
+      "ui_toast_toastprops",
+      "ui_toast_toasttitle",
+      "ui_toast_toastvariants",
+      "ui_toast_toastviewport"
+    ],
+    "11": [
+      "doc_cold_chain_monitoring",
+      "doc_predictive_ml_engine",
+      "doc_pulsechain_overview",
+      "doc_ssid_localization",
+      "doc_tamper_detection",
+      "doc_telemetry_payload_api"
+    ],
+    "12": [
+      "frontend_oxlintrc_json",
+      "frontend_oxlintrc_plugins",
+      "frontend_oxlintrc_rules",
+      "frontend_oxlintrc_rules_react_only_export_components",
+      "frontend_oxlintrc_rules_react_rules_of_hooks",
+      "frontend_oxlintrc_schema"
+    ],
+    "13": [
+      "data_mockdata_initialpackages",
+      "data_mockdata_initialtrucks",
+      "data_mockdata_initialusers",
+      "data_mockdata_truckids",
+      "frontend_src_data_mockdata_ts"
+    ],
+    "14": [
+      "frontend_src_components_shared_statusbadge_tsx",
+      "shared_statusbadge_label",
+      "shared_statusbadge_statusbadge",
+      "shared_statusbadge_statusbadgeprops",
+      "shared_statusbadge_tone"
+    ],
+    "15": [
+      "fleet_fleet_charttooltip",
+      "fleet_fleet_fleet",
+      "fleet_fleet_truckmodal",
+      "frontend_src_pages_fleet_fleet_tsx"
+    ],
+    "16": [
+      "analytics_analytics_analytics",
+      "analytics_analytics_audit",
+      "analytics_analytics_correlation",
+      "frontend_src_pages_analytics_analytics_tsx"
+    ],
+    "17": [
+      "frontend_src_app_tsx",
+      "frontend_src_main_tsx",
+      "src_app_app"
+    ],
+    "18": [
+      "frontend_src_components_shared_liveclock_tsx",
+      "shared_liveclock_getcurrenttimewithzone",
+      "shared_liveclock_liveclock"
+    ],
+    "19": [
+      "frontend_src_components_shared_searchbox_tsx",
+      "shared_searchbox_searchbox",
+      "shared_searchbox_searchboxprops"
+    ],
+    "20": [
+      "frontend_src_components_shared_sectiontitle_tsx",
+      "shared_sectiontitle_sectiontitle",
+      "shared_sectiontitle_sectiontitleprops"
+    ],
+    "21": [
+      "frontend_tsconfig_files",
+      "frontend_tsconfig_json",
+      "frontend_tsconfig_references"
+    ],
+    "22": [
+      "frontend_src_components_shared_button_tsx",
+      "shared_button_button",
+      "shared_button_buttonprops"
+    ],
+    "23": [
+      "frontend_src_components_shared_kpicard_tsx",
+      "shared_kpicard_kpicard",
+      "shared_kpicard_kpicardprops"
+    ],
+    "24": [
+      "backend_app_db_session_py",
+      "db_session_get_db"
+    ],
+    "25": [
+      "backend_simulator_py",
+      "backend_simulator_run_simulation"
+    ],
+    "26": [
+      "frontend_src_components_shared_logo_tsx",
+      "shared_logo_logo"
+    ],
+    "27": [
+      "frontend_src_components_shared_metric_tsx",
+      "shared_metric_metric"
+    ],
+    "28": [
+      "frontend_src_components_ui_tooltip_tsx",
+      "ui_tooltip_tooltipcontent"
+    ],
+    "29": [
+      "frontend_src_pages_notfound_tsx",
+      "pages_notfound_notfound"
+    ],
+    "30": [
+      "frontend_src_pages_packages_packages_tsx",
+      "packages_packages_packages"
+    ],
+    "31": [
+      "frontend_src_hooks_use_mobile_tsx",
+      "hooks_use_mobile_useismobile"
+    ],
+    "32": [
+      "frontend_src_lib_utils_ts",
+      "lib_utils_cn"
+    ],
+    "33": [
+      "backend_app_init_py"
+    ],
+    "34": [
+      "backend_app_core_config_py"
+    ],
+    "35": [
+      "backend_app_core_security_py"
+    ],
+    "36": [
+      "backend_app_db_base_py"
+    ],
+    "37": [
+      "backend_app_routers_admin_py"
+    ],
+    "38": [
+      "backend_app_routers_analytics_py"
+    ],
+    "39": [
+      "backend_app_routers_auth_py"
+    ],
+    "40": [
+      "backend_app_routers_fleet_py"
+    ],
+    "41": [
+      "backend_app_routers_packages_py"
+    ],
+    "42": [
+      "backend_app_services_public_track_py"
+    ],
+    "43": [
+      "frontend_vite_config_ts"
+    ],
+    "44": [
+      "frontend_src_services_analytics_ts"
+    ]
+  },
+  "cohesion": {
+    "0": 0.046511627906976744,
+    "1": 0.22348484848484848,
+    "2": 0.1168091168091168,
+    "3": 0.52,
+    "4": 0.20553359683794467,
+    "5": 0.09090909090909091,
+    "6": 0.09090909090909091,
+    "7": 0.11764705882352941,
+    "8": 0.14705882352941177,
+    "9": 0.21818181818181817,
+    "10": 0.2,
+    "11": 0.3333333333333333,
+    "12": 0.3333333333333333,
+    "13": 0.4,
+    "14": 0.6,
+    "15": 0.5,
+    "16": 0.5,
+    "17": 0.6666666666666666,
+    "18": 1.0,
+    "19": 0.6666666666666666,
+    "20": 0.6666666666666666,
+    "21": 0.6666666666666666,
+    "22": 0.6666666666666666,
+    "23": 0.6666666666666666,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0,
+    "39": 1.0,
+    "40": 1.0,
+    "41": 1.0,
+    "42": 1.0,
+    "43": 1.0,
+    "44": 1.0
+  },
+  "gods": [
+    {
+      "id": "backend_app_main_py_session",
+      "label": "Session",
+      "degree": 37
+    },
+    {
+      "id": "schemas_schemas_userschema",
+      "label": "UserSchema",
+      "degree": 31
+    },
+    {
+      "id": "backend_app_main_py_str",
+      "label": "str",
+      "degree": 29
+    },
+    {
+      "id": "models_models_dbuser",
+      "label": "DBUser",
+      "degree": 29
+    },
+    {
+      "id": "models_models_dbassignment",
+      "label": "DBAssignment",
+      "degree": 28
+    },
+    {
+      "id": "models_models_dbtelemetry",
+      "label": "DBTelemetry",
+      "degree": 28
+    },
+    {
+      "id": "datetime",
+      "label": "datetime",
+      "degree": 27
+    },
+    {
+      "id": "models_models_dblogin",
+      "label": "DBLogin",
+      "degree": 27
+    },
+    {
+      "id": "models_models_dbtruck",
+      "label": "DBTruck",
+      "degree": 25
+    },
+    {
+      "id": "models_models_dbpackage",
+      "label": "DBPackage",
+      "degree": 25
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Telemetry Ingestion Spec",
+      "target": "PulseChain Platform",
+      "source_files": [
+        "API.md",
+        "README.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "conceptually_related_to",
+      "why": "connects across different repos/directories; peripheral node `Telemetry Ingestion Spec` unexpectedly reaches hub `PulseChain Platform`"
+    },
+    {
+      "source": "str",
+      "target": "DBAssignment",
+      "source_files": [
+        "backend/app/main.py",
+        "backend/app/models/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; bridges separate communities"
+    },
+    {
+      "source": "str",
+      "target": "DBLogin",
+      "source_files": [
+        "backend/app/main.py",
+        "backend/app/models/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; bridges separate communities"
+    },
+    {
+      "source": "str",
+      "target": "DBPackage",
+      "source_files": [
+        "backend/app/main.py",
+        "backend/app/models/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; bridges separate communities"
+    },
+    {
+      "source": "str",
+      "target": "DBTelemetry",
+      "source_files": [
+        "backend/app/main.py",
+        "backend/app/models/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `Session` connect `Community 4` to `Community 1`, `Community 3`?",
+      "why": "High betweenness centrality (0.008) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `datetime` connect `Community 3` to `Community 1`, `Community 4`?",
+      "why": "High betweenness centrality (0.007) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 21 inferred relationships involving `Session` (e.g. with `DBAssignment` and `DBLogin`) actually correct?",
+      "why": "`Session` has 21 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 29 inferred relationships involving `UserSchema` (e.g. with `get_users()` and `invite_user()`) actually correct?",
+      "why": "`UserSchema` has 29 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 21 inferred relationships involving `str` (e.g. with `DBAssignment` and `DBLogin`) actually correct?",
+      "why": "`str` has 21 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 27 inferred relationships involving `DBUser` (e.g. with `invite_user()` and `login_user()`) actually correct?",
+      "why": "`DBUser` has 27 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 26 inferred relationships involving `DBAssignment` (e.g. with `assign_package()` and `deliver_package()`) actually correct?",
+      "why": "`DBAssignment` has 26 INFERRED edges - model-reasoned connections that need verification."
+    }
+  ]
+}

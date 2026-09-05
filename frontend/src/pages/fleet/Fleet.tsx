@@ -33,7 +33,7 @@ import { useApp } from "@/context/AppContext";
 import { SectionTitle } from "@/components/shared/SectionTitle";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fleetService } from "@/services/fleetService";
-import type { Truck as TruckType } from "@/types";
+import type { Truck as TruckType, TelemetryPoint } from "@/types";
 
 // ─── Threshold Constants ───────────────────────────────────────────────────────
 const TEMP_MAX = 8.0; // °C upper limit
@@ -76,12 +76,30 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
   const { data: telemetryData, isLoading } = useQuery({
     queryKey: ["truck-telemetry", truck.id],
     queryFn: () => fleetService.getTruckTelemetry(truck.id),
-    refetchInterval: 5000,
+    refetchInterval: 1500,
   });
 
-  const chartHistory = telemetryData?.history?.length
-    ? telemetryData.history
-    : [
+  const currentTruck = telemetryData?.current || truck;
+  const effectiveTempMin = currentTruck.tempMin ?? TEMP_MIN;
+  const effectiveTempMax = currentTruck.tempMax ?? TEMP_MAX;
+
+  // Local sliding-window chart history that APPENDS new telemetry points
+  // instead of causing full wipes / re-draws
+  const [chartData, setChartData] = useState<TelemetryPoint[]>(() => {
+    return [
+      {
+        time: "Now",
+        temp: currentTruck.temp,
+        humidity: currentTruck.humidity,
+        lux: currentTruck.lux,
+        risk: currentTruck.risk,
+      },
+    ];
+  });
+
+  // Reset when a different truck modal is opened
+  useEffect(() => {
+    setChartData([
       {
         time: "Now",
         temp: truck.temp,
@@ -89,10 +107,38 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
         lux: truck.lux,
         risk: truck.risk,
       },
-    ];
+    ]);
+  }, [truck.id]);
 
-  const isCritical = truck.health === "critical";
-  const isAmber = truck.health === "amber";
+  // Seamless append update when new telemetry arrives
+  useEffect(() => {
+    if (!telemetryData?.history?.length) return;
+
+    setChartData((prev) => {
+      // First load: initialize with the full history
+      if (prev.length === 0 || (prev.length === 1 && prev[0].time === "Now")) {
+        return telemetryData.history;
+      }
+
+      // Identify which incoming points are brand new (by unique timestamp)
+      const existingTimestamps = new Set(prev.map((p) => p.time));
+      const newPoints = telemetryData.history.filter(
+        (p) => !existingTimestamps.has(p.time)
+      );
+
+      // If no new points arrived, preserve exact array reference (no re-render!)
+      if (newPoints.length === 0) {
+        return prev;
+      }
+
+      // Append only the newly received points to the existing data
+      const updated = [...prev, ...newPoints];
+      return updated.length > 50 ? updated.slice(-50) : updated;
+    });
+  }, [telemetryData?.history]);
+
+  const isCritical = currentTruck.health === "critical";
+  const isAmber = currentTruck.health === "amber";
   const accentColor = isCritical ? "#f87171" : isAmber ? "#fb923c" : "#34d399";
   const accentBg = isCritical
     ? "bg-rose-400/10 border-rose-400/30"
@@ -121,11 +167,11 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-base font-semibold text-slate-100">{truck.id}</span>
-                <StatusBadge health={truck.health} />
+                <span className="font-mono text-base font-semibold text-slate-100">{currentTruck.id}</span>
+                <StatusBadge health={currentTruck.health} />
               </div>
               <div className="mt-1 text-sm text-slate-400">
-                {truck.driver} &middot; {truck.route} &middot; ETA {truck.eta}
+                {currentTruck.driver} &middot; {currentTruck.route} &middot; ETA {currentTruck.eta}
               </div>
             </div>
           </div>
@@ -162,9 +208,9 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
                 className={`mt-2 text-3xl font-semibold tracking-tight ${isCritical ? "text-rose-300" : isAmber ? "text-amber-300" : "text-cyan-300"
                   }`}
               >
-                {truck.temp.toFixed(1)}°
+                {currentTruck.temp.toFixed(1)}°
               </div>
-              <div className="mt-1 text-xs text-slate-500">Limit {TEMP_MIN}–{TEMP_MAX} °C</div>
+              <div className="mt-1 text-xs text-slate-500">Limit {effectiveTempMin.toFixed(1)}–{effectiveTempMax.toFixed(1)} °C</div>
             </div>
 
             <div className="rounded-xl border border-slate-700/60 bg-slate-800/30 p-4">
@@ -172,10 +218,10 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
                 <Droplets size={12} /> Humidity
               </div>
               <div
-                className={`mt-2 text-3xl font-semibold tracking-tight ${truck.humidity > RH_MAX ? "text-amber-300" : "text-slate-200"
+                className={`mt-2 text-3xl font-semibold tracking-tight ${currentTruck.humidity > RH_MAX ? "text-amber-300" : "text-slate-200"
                   }`}
               >
-                {truck.humidity}%
+                {currentTruck.humidity}%
               </div>
               <div className="mt-1 text-xs text-slate-500">Max {RH_MAX}% RH</div>
             </div>
@@ -184,14 +230,14 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 uppercase tracking-wide">
                 <Zap size={12} /> Ambient Light
               </div>
-              <div className="mt-2 text-3xl font-semibold tracking-tight text-slate-200">{truck.lux}</div>
+              <div className="mt-2 text-3xl font-semibold tracking-tight text-slate-200">{currentTruck.lux}</div>
               <div className="mt-1 text-xs text-slate-500">Lux reading</div>
             </div>
 
             <div
-              className={`rounded-xl border p-4 ${truck.risk > 70
+              className={`rounded-xl border p-4 ${currentTruck.risk > 70
                 ? "border-rose-400/40 bg-rose-400/[.07]"
-                : truck.risk > 40
+                : currentTruck.risk > 40
                   ? "border-amber-400/40 bg-amber-400/[.07]"
                   : "border-slate-700/60 bg-slate-800/30"
                 }`}
@@ -200,13 +246,13 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
                 <Shield size={12} /> Risk Score
               </div>
               <div
-                className={`mt-2 text-3xl font-semibold tracking-tight ${truck.risk > 70 ? "text-rose-300" : truck.risk > 40 ? "text-amber-300" : "text-emerald-300"
+                className={`mt-2 text-3xl font-semibold tracking-tight ${currentTruck.risk > 70 ? "text-rose-300" : currentTruck.risk > 40 ? "text-amber-300" : "text-emerald-300"
                   }`}
               >
-                {truck.risk}
+                {currentTruck.risk}
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                {truck.risk > 70 ? "Critical threshold" : truck.risk > 40 ? "Amber threshold" : "Within safe bounds"}
+                {currentTruck.risk > 70 ? "Critical threshold" : currentTruck.risk > 40 ? "Amber threshold" : "Within safe bounds"}
               </div>
             </div>
           </div>
@@ -214,25 +260,25 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
           {/* Status Row */}
           <div className="mb-5 flex flex-wrap gap-2">
             <div className="flex items-center gap-2 border border-slate-700/60 bg-slate-800/30 px-3 py-2 rounded-sm">
-              <div className={`h-2 w-2 rounded-full ${truck.door === "OPEN" ? "bg-rose-400 animate-pulse" : "bg-emerald-400"}`} />
+              <div className={`h-2 w-2 rounded-full ${currentTruck.door === "OPEN" ? "bg-rose-400 animate-pulse" : "bg-emerald-400"}`} />
               <span className="text-xs text-slate-500">Door</span>
-              <span className={`text-xs font-semibold ${truck.door === "OPEN" ? "text-rose-300" : "text-emerald-300"}`}>
-                {truck.door === "OPEN" ? "Open" : "Sealed"}
+              <span className={`text-xs font-semibold ${currentTruck.door === "OPEN" ? "text-rose-300" : "text-emerald-300"}`}>
+                {currentTruck.door === "OPEN" ? "Open" : "Sealed"}
               </span>
             </div>
             <div className="flex items-center gap-2 border border-slate-700/60 bg-slate-800/30 px-3 py-2 rounded-sm">
               <MapPin size={12} className="text-slate-500" />
               <span className="text-xs text-slate-500">Node</span>
-              <span className="text-xs text-cyan-300 font-mono">{truck.ssid}</span>
+              <span className="text-xs text-cyan-300 font-mono">{currentTruck.ssid}</span>
             </div>
             <div className="flex items-center gap-2 border border-slate-700/60 bg-slate-800/30 px-3 py-2 rounded-sm">
               <Clock size={12} className="text-slate-500" />
               <span className="text-xs text-slate-500">Last seen</span>
-              <span className="text-xs text-slate-300">{truck.lastSeen}</span>
+              <span className="text-xs text-slate-300">{currentTruck.lastSeen}</span>
             </div>
             <div className="flex items-center gap-2 border border-slate-700/60 bg-slate-800/30 px-3 py-2 rounded-sm">
               <span className="text-xs text-slate-500">Destination</span>
-              <span className="text-xs text-slate-200">{truck.destination}</span>
+              <span className="text-xs text-slate-200">{currentTruck.destination}</span>
             </div>
           </div>
 
@@ -258,15 +304,16 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
               </div>
             </div>
 
-            <div className="h-[240px] w-full" data-testid={`chart-telemetry-${truck.id}`}>
+            <div className="h-[240px] w-full" data-testid={`chart-telemetry-${currentTruck.id}`}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartHistory} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                   <CartesianGrid stroke="#1c3440" strokeDasharray="2 6" />
                   <XAxis
                     dataKey="time"
                     tick={{ fill: "#8fa8b5", fontSize: 11, fontFamily: "DM Mono" }}
                     tickLine={false}
                     axisLine={false}
+                    minTickGap={25}
                   />
                   <YAxis
                     yAxisId="temp"
@@ -287,12 +334,12 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
 
                   <ReferenceLine
                     yAxisId="temp"
-                    y={TEMP_MAX}
+                    y={effectiveTempMax}
                     stroke="#f87171"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                     label={{
-                      value: `Max ${TEMP_MAX}°C`,
+                      value: `Max ${effectiveTempMax}°C`,
                       position: "insideTopRight",
                       fill: "#f87171",
                       fontSize: 11,
@@ -301,12 +348,12 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
                   />
                   <ReferenceLine
                     yAxisId="temp"
-                    y={TEMP_MIN}
+                    y={effectiveTempMin}
                     stroke="#60a5fa"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                     label={{
-                      value: `Min ${TEMP_MIN}°C`,
+                      value: `Min ${effectiveTempMin}°C`,
                       position: "insideBottomRight",
                       fill: "#60a5fa",
                       fontSize: 11,
@@ -336,6 +383,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
                     strokeWidth={2}
                     dot={false}
                     activeDot={{ r: 3, fill: "#57e0e5" }}
+                    isAnimationActive={false}
                   />
                   <Line
                     yAxisId="rh"
@@ -345,6 +393,7 @@ function TruckModal({ truck, onClose }: { truck: TruckType; onClose: () => void 
                     strokeWidth={1.5}
                     dot={false}
                     activeDot={{ r: 3, fill: "#f7a94a" }}
+                    isAnimationActive={false}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -379,7 +428,7 @@ export function Fleet() {
   const { data: trucks = [], isLoading } = useQuery({
     queryKey: ["fleet"],
     queryFn: fleetService.getFleetOverview,
-    refetchInterval: 5000,
+    refetchInterval: 2000,
   });
 
   const queryClient = useQueryClient();
@@ -440,7 +489,7 @@ export function Fleet() {
           note={`${criticalTrucks.length} critical · ${amberTrucks.length} amber`}
           accent={priorityCount > 0 ? "orange" : "emerald"}
         />
-        <KpiCard name="Avg telemetry lag" value="3.2s" note="Live polling" />
+        <KpiCard name="Avg telemetry lag" value="1.0s" note="Live polling" />
       </div>
 
       {/* Top Emergency Priority Row */}
