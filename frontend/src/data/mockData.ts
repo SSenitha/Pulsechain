@@ -197,7 +197,7 @@ export const initialUsers: User[] = [
   {
     name: 'Mara Okafor',
     email: 'mara.okafor@northstarlogistics.co',
-    role: 'Operator',
+    role: 'Super Admin',
     status: 'Active',
     lastActive: 'Now',
   },

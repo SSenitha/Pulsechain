@@ -10,10 +10,16 @@ def run_seed():
 
     db = SessionLocal()
     try:
-        # Users
-        u1 = DBUser(email="admin@pulsechain.io", name="K. Sandaru", role="Super Admin")
-        u2 = DBUser(email="operator@pulsechain.io", name="Ana Petrov", role="Operator")
-        db.add_all([u1, u2])
+        # Users (Dev build: unified password 'guardian-demo', Mara is Super Admin)
+        DEV_PASSWORD = "guardian-demo"
+        u1 = DBUser(email="mara.okafor@northstarlogistics.co", name="Mara Okafor", role="Super Admin", status="Active", password=DEV_PASSWORD)
+        u2 = DBUser(email="admin@pulsechain.io", name="K. Sandaru", role="Super Admin", status="Active", password=DEV_PASSWORD)
+        u3 = DBUser(email="operator@pulsechain.io", name="Ana Petrov", role="Operator", status="Active", password=DEV_PASSWORD)
+        u4 = DBUser(email="theo.nguyen@northstarlogistics.co", name="Theo Nguyen", role="Viewer", status="Active", password=DEV_PASSWORD)
+        u5 = DBUser(email="priya.nanduri@northstarlogistics.co", name="Priya Nanduri", role="Super Admin", status="Active", password=DEV_PASSWORD)
+        u6 = DBUser(email="jon.bell@northstarlogistics.co", name="Jon Bell", role="Operator", status="Active", password=DEV_PASSWORD)
+        db.add_all([u1, u2, u3, u4, u5, u6])
+        db.commit()
 
         # Logins
         l1 = DBLogin(user_email=u1.email, time=datetime.utcnow())

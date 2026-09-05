@@ -40,12 +40,13 @@ export function Login() {
             });
             setLocation('/fleet');
         } catch (err: any) {
-            // Fallback for local demo preset credentials if API is unavailable or user matches mock demo
-            if (email === 'mara.okafor@northstarlogistics.co' && password === 'guardian-demo') {
+            // Fallback for dev build: universal password 'guardian-demo' for all usernames
+            if (password === 'guardian-demo') {
+                const isSuperAdmin = email.toLowerCase().includes('mara') || email.toLowerCase().includes('admin') || email.toLowerCase().includes('priya');
                 setUser({
-                    name: 'Mara Okafor',
-                    email: 'mara.okafor@northstarlogistics.co',
-                    role: 'Super Admin',
+                    name: email === 'mara.okafor@northstarlogistics.co' ? 'Mara Okafor' : email.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+                    email: email,
+                    role: isSuperAdmin ? 'Super Admin' : 'Operator',
                     status: 'Active',
                 });
                 setLocation('/fleet');
@@ -168,9 +169,10 @@ export function Login() {
                             </label>
 
                             <label className="block">
-                                <span className="mb-1.5 block font-mono text-[10px] tracking-[.12em] text-slate-500">
-                                    ACCESS KEY
-                                </span>
+                                <div className="mb-1.5 flex items-center justify-between font-mono text-[10px] tracking-[.12em]">
+                                    <span className="text-slate-500">ACCESS KEY</span>
+                                    <span className="text-cyan-400/90 font-medium">DEV KEY: guardian-demo</span>
+                                </div>
                                 <input
                                     data-testid="input-login-password"
                                     value={password}
